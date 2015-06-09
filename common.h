@@ -21,7 +21,12 @@
     const zend_function_entry FUNCTION_ENTRY(name)[]
     
 #define REGISTER_CLASS(name) \
-    zend_class_entry ce_##name; \
-    INIT_CLASS_ENTRY(ce_##name, #name, FUNCTION_ENTRY(name)); \
-    CLASS_ENTRY(name) = zend_register_internal_class(&ce_##name TSRMLS_CC);
+    zend_class_entry ce; \
+    INIT_CLASS_ENTRY(ce, #name, FUNCTION_ENTRY(name)); \
+    CLASS_ENTRY(name) = zend_register_internal_class(&ce TSRMLS_CC);
+
+#define ARGINFO(classname, method) \
+    arginfo_##classname_##method
+
 #endif
+

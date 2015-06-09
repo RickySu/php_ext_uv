@@ -10,6 +10,7 @@
 #endif
 
 #include <php.h>
+#include <uv.h>
 #include "common.h"
 
 extern zend_module_entry php_ext_uv_module_entry;
