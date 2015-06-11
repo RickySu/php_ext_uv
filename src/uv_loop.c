@@ -5,7 +5,7 @@ CLASS_ENTRY_FUNCTION_D(UVLoop){
     zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_DEFAULT"), RUN_DEFAULT TSRMLS_CC);
     zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_ONCE"), RUN_ONCE TSRMLS_CC);
     zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_NOWAIT"), RUN_NOWAIT TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), ZEND_ACC_PRIVATE|ZEND_ACC_STATIC);
+    zend_declare_property_null(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), ZEND_ACC_PRIVATE|ZEND_ACC_STATIC TSRMLS_CC);
 }
 
 PHP_METHOD(UVLoop, __construct){

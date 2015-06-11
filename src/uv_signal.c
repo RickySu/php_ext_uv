@@ -3,7 +3,7 @@
 CLASS_ENTRY_FUNCTION_D(UVSignal){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVSignal, createUVSignalResource);
     OBJECT_HANDLER(UVSignal).clone_obj = NULL;
-    zend_declare_property_null(CLASS_ENTRY(UVSignal), ZEND_STRL("callback"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(CLASS_ENTRY(UVSignal), ZEND_STRL("callback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
 static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){

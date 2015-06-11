@@ -3,7 +3,7 @@
 CLASS_ENTRY_FUNCTION_D(UVTimer){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTimer, createUVTimerResource);
     OBJECT_HANDLER(UVTimer).clone_obj = NULL;
-    zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("callback"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("callback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
 static void timer_handle_callback(uv_timer_ext_t *timer_handle){
