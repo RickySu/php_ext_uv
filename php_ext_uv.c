@@ -27,6 +27,7 @@ ZEND_GET_MODULE(php_ext_uv)
 
 PHP_MINIT_FUNCTION(php_ext_uv) {
     CLASS_ENTRY_FUNCTION_C(UVLoop);
+    CLASS_ENTRY_FUNCTION_C(UVSignal);
     return SUCCESS;
 }
 

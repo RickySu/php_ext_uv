@@ -5,11 +5,9 @@ PHP_ARG_ENABLE(php_ext_uv, whether to enable php_ext_uv support,
 Make sure that the comment is aligned:
 [ --enable-php_ext_uv Enable php_ext_uv support])
 
-dnl R3_LIB = "$THIRDPARTY_BUILD_DIR/libr3.a"
-
 if test "$PHP_PHP_EXT_UV" != "no"; then
 
-  MODULES="php_ext_uv.c src/uv_loop.c"
+  MODULES="php_ext_uv.c src/uv_loop.c src/uv_signal.c"
   PHP_NEW_EXTENSION(php_ext_uv, $MODULES, $ext_shared)
   
 fi
