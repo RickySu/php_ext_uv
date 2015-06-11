@@ -28,6 +28,7 @@ ZEND_GET_MODULE(php_ext_uv)
 PHP_MINIT_FUNCTION(php_ext_uv) {
     CLASS_ENTRY_FUNCTION_C(UVLoop);
     CLASS_ENTRY_FUNCTION_C(UVSignal);
+    CLASS_ENTRY_FUNCTION_C(UVTimer);
     return SUCCESS;
 }
 
@@ -39,5 +40,4 @@ PHP_MINFO_FUNCTION(php_ext_uv) {
     php_info_print_table_start();
     php_info_print_table_header(2, "php_ext_uv support", "enabled");
     php_info_print_table_end();
-    return SUCCESS;
 }

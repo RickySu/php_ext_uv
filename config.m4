@@ -7,7 +7,7 @@ Make sure that the comment is aligned:
 
 if test "$PHP_PHP_EXT_UV" != "no"; then
 
-  MODULES="php_ext_uv.c src/uv_loop.c src/uv_signal.c"
+  MODULES="php_ext_uv.c src/uv_loop.c src/uv_signal.c src/uv_timer.c"
   PHP_NEW_EXTENSION(php_ext_uv, $MODULES, $ext_shared)
   
 fi
