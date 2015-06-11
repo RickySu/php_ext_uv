@@ -1,5 +1,7 @@
 THIRDPARTY_BUILD_DIR="$srcdir/thirdparty/build"
-PHP_ADD_INCLUDE($THIRDPARTY_BUILD_DIR/include)
+
+PHP_ADD_INCLUDE("$srcdir/thirdparty/r3/include")
+PHP_ADD_INCLUDE("$srcdir/thirdparty/libuv/include")
 
 PHP_ARG_ENABLE(php_ext_uv, whether to enable php_ext_uv support,
 Make sure that the comment is aligned:
@@ -14,8 +16,6 @@ fi
 
 
 PHP_ADD_MAKEFILE_FRAGMENT([Makefile.thirdparty])
-dnl PHP_ADD_LIBRARY_WITH_PATH(r3, $THIRDPARTY_BUILD_DIR/lib, R3_LIBADD)
-dnl PHP_ADD_LIBRARY_WITH_PATH(uv, $THIRDPARTY_BUILD_DIR/lib, UV_LIBADD)
 
 PHP_EXT_UV_SHARED_DEPENDENCIES="$THIRDPARTY_BUILD_DIR/lib/libr3.a $THIRDPARTY_BUILD_DIR/lib/libuv.a"
 dnl LDFLAGS="$LDFLAGS $R3_LIBADD $UV_LIBADD"
