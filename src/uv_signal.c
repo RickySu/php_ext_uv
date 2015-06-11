@@ -19,16 +19,16 @@ static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
     zval_dtor(&retval);
 }
 
-static zend_object_value createUVSignalResource(zend_class_entry *ce TSRMLS_DC) {
+static zend_object_value createUVSignalResource(zend_class_entry *ce) {
     zend_object_value retval;
     uv_signal_ext_t *resource;
     resource = (uv_signal_ext_t *) emalloc(sizeof(uv_signal_ext_t));
     memset(resource, 0, sizeof(uv_signal_ext_t));
 
     uv_signal_init(uv_default_loop(), &resource->uv_signal);
-    zend_object_std_init(&resource->zo, ce TSRMLS_CC);
+    zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
-
+    
     retval.handle = zend_objects_store_put(
         &resource->zo,
         (zend_objects_store_dtor_t) zend_objects_destroy_object,
@@ -39,7 +39,7 @@ static zend_object_value createUVSignalResource(zend_class_entry *ce TSRMLS_DC) 
     return retval;
 }
 
-void freeUVSignalResource(void *object TSRMLS_DC) {
+void freeUVSignalResource(void *object) {
     uv_signal_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_signal_ext_t);
     if(resource->start){
@@ -47,7 +47,7 @@ void freeUVSignalResource(void *object TSRMLS_DC) {
     }
     
     uv_unref((uv_handle_t *) resource);
-    zend_object_std_dtor(&resource->zo TSRMLS_CC);
+    zend_object_std_dtor(&resource->zo);
     efree(resource);
 }
 
