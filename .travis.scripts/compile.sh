@@ -1,4 +1,5 @@
 #!/bin/bash
+sudo apt-get -y install check pkg-config
 phpize
 ./configure
 make all 
