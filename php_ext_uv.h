@@ -6,6 +6,7 @@
 #endif
 
 #ifdef ZTS
+    #warning php_ext_uv module will *NEVER* be thread-safe
     #include <TSRM.h>
 #endif
 

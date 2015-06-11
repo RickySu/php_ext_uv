@@ -10,23 +10,24 @@ static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
     zval *signal_cb;
     zval retval;
     zval *params[] = {signal_handle->object, NULL};
+    TSRMLS_FETCH();
     ZVAL_NULL(&retval);
     MAKE_STD_ZVAL(params[1]);
     ZVAL_LONG(params[1], signo);
     signal_cb = zend_read_property(CLASS_ENTRY(UVSignal), signal_handle->object, ZEND_STRL("callback"), 0 TSRMLS_CC);
-    call_user_function(CG(function_table), NULL, signal_cb, &retval, 2, params);
+    call_user_function(CG(function_table), NULL, signal_cb, &retval, 2, params TSRMLS_CC);
     zval_ptr_dtor(&params[1]);    
     zval_dtor(&retval);
 }
 
-static zend_object_value createUVSignalResource(zend_class_entry *ce) {
+static zend_object_value createUVSignalResource(zend_class_entry *ce TSRMLS_DC) {
     zend_object_value retval;
     uv_signal_ext_t *resource;
     resource = (uv_signal_ext_t *) emalloc(sizeof(uv_signal_ext_t));
     memset(resource, 0, sizeof(uv_signal_ext_t));
 
     uv_signal_init(uv_default_loop(), &resource->uv_signal);
-    zend_object_std_init(&resource->zo, ce);
+    zend_object_std_init(&resource->zo, ce TSRMLS_CC);
     object_properties_init(&resource->zo, ce);
     
     retval.handle = zend_objects_store_put(
@@ -39,7 +40,7 @@ static zend_object_value createUVSignalResource(zend_class_entry *ce) {
     return retval;
 }
 
-void freeUVSignalResource(void *object) {
+void freeUVSignalResource(void *object TSRMLS_DC) {
     uv_signal_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_signal_ext_t);
     if(resource->start){
@@ -47,7 +48,7 @@ void freeUVSignalResource(void *object) {
     }
     
     uv_unref((uv_handle_t *) resource);
-    zend_object_std_dtor(&resource->zo);
+    zend_object_std_dtor(&resource->zo TSRMLS_CC);
     efree(resource);
 }
 
@@ -57,12 +58,12 @@ PHP_METHOD(UVSignal, start){
     zval *self = getThis();
     uv_signal_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_signal_ext_t);
     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "zl", &signal_cb, &signo)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zl", &signal_cb, &signo)) {
         return;
     }
     
-    if (!zend_is_callable(signal_cb, 0, NULL)) {
-        php_error_docref(NULL, E_WARNING, "param signal_cb is not callable");
+    if (!zend_is_callable(signal_cb, 0, NULL TSRMLS_CC)) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param signal_cb is not callable");
     }
     
     ret = uv_signal_start((uv_signal_t *) resource, (uv_signal_cb) signal_handle_callback, signo);
