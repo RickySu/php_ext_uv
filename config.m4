@@ -9,7 +9,13 @@ Make sure that the comment is aligned:
 
 if test "$PHP_PHP_EXT_UV" != "no"; then
 
-  MODULES="php_ext_uv.c src/uv_loop.c src/uv_signal.c src/uv_timer.c"
+  MODULES="
+      php_ext_uv.c
+      src/uv_loop.c
+      src/uv_signal.c
+      src/uv_timer.c
+      src/uv_udp.c
+  "
   PHP_NEW_EXTENSION(php_ext_uv, $MODULES, $ext_shared)
   
 fi
@@ -18,7 +24,6 @@ fi
 PHP_ADD_MAKEFILE_FRAGMENT([Makefile.thirdparty])
 
 PHP_EXT_UV_SHARED_DEPENDENCIES="$THIRDPARTY_BUILD_DIR/lib/libr3.a $THIRDPARTY_BUILD_DIR/lib/libuv.a"
-dnl LDFLAGS="$LDFLAGS $R3_LIBADD $UV_LIBADD"
 EXTRA_LDFLAGS="$EXTRA_LDFLAGS $THIRDPARTY_BUILD_DIR/lib/libr3.a $THIRDPARTY_BUILD_DIR/lib/libuv.a"
 
 PHP_SUBST(PHP_EXT_UV_SHARED_DEPENDENCIES)
