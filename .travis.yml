@@ -13,5 +13,4 @@ compiler:
 before_script:
     - ./.travis.scripts/compile.sh
 script:
-    - echo "no test available"
-    - make test
+    - echo "n" | make test
