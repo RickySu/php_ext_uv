@@ -47,11 +47,20 @@ static void release(uv_tcp_ext_t *resource){
     }
 */
 }
-/*
+
 static void close_cb(uv_handle_t* handle) {
-    release((uv_udp_ext_t *) handle);
+    release((uv_tcp_ext_t *) handle);
 }
 
+static inline void tcp_close_socket(uv_tcp_ext_t *handle){
+    if(handle->flag & UV_TCP_CLOSING_START){
+        return;
+    }
+    handle->flag |= UV_TCP_CLOSING_START;
+    uv_close((uv_handle_t *) handle, close_cb);
+}
+
+/*
 static void send_cb(uv_udp_send_t* sr, int status) {
     send_req_t *req = (send_req_t *) sr;
     uv_udp_ext_t *resource = (uv_udp_ext_t *) sr->handle;
@@ -111,11 +120,13 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             call_user_function(CG(function_table), NULL, error_cb, &retval, 2, params TSRMLS_CC);
             zval_ptr_dtor(&params[1]);
         }
+        tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
     }
     efree(buf->base);
     zval_dtor(&retval);    
 }
-    
+
+
 
 static zend_object_value createUVTcpResource(zend_class_entry *ce TSRMLS_DC) {
     zend_object_value retval;
@@ -314,4 +325,12 @@ PHP_METHOD(UVTcp, setCallback){
         Z_ADDREF_P(resource->object);
     }
      RETURN_LONG(ret);
+}
+
+PHP_METHOD(UVTcp, close){
+    long ret;
+    zval *self = getThis();
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    
+    tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
 }
