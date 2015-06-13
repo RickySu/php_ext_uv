@@ -60,35 +60,31 @@ static inline void tcp_close_socket(uv_tcp_ext_t *handle){
     uv_close((uv_handle_t *) handle, close_cb);
 }
 
-/*
-static void send_cb(uv_udp_send_t* sr, int status) {
-    send_req_t *req = (send_req_t *) sr;
-    uv_udp_ext_t *resource = (uv_udp_ext_t *) sr->handle;
+static void write_cb(uv_write_t *wr, int status){
     zval retval;
-    zval *params[] = {resource->object, NULL, NULL, NULL};
-    zval *send_cb;
+    zval *write_cb;
+    write_req_t *req = (write_req_t *) wr;
+    uv_tcp_ext_t *resource = (uv_tcp_ext_t *) req->uv_write.handle;
+    zval *params[] = {resource->object, NULL, NULL};
     TSRMLS_FETCH();
-    send_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("writeCallback"), 0 TSRMLS_CC);
-    
-    if(IS_NULL != Z_TYPE_P(send_cb)){    
+
+    write_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("writeCallback"), 0 TSRMLS_CC);
+
+    if(IS_NULL != Z_TYPE_P(write_cb)){
         MAKE_STD_ZVAL(params[1]);
-        ZVAL_STRING(params[1], sock_addr((struct sockaddr *) &req->addr), 1);
+        ZVAL_LONG(params[1], status);
         MAKE_STD_ZVAL(params[2]);
-        ZVAL_LONG(params[2], sock_port((struct sockaddr *) &req->addr));
-        MAKE_STD_ZVAL(params[3]);
-        ZVAL_LONG(params[3], status);
+        ZVAL_LONG(params[2], req->buf.len);
     
-        call_user_function(CG(function_table), NULL, send_cb, &retval, 4, params TSRMLS_CC);
+        call_user_function(CG(function_table), NULL, write_cb, &retval, 3, params TSRMLS_CC);
     
         zval_ptr_dtor(&params[1]);
         zval_ptr_dtor(&params[2]);
-        zval_ptr_dtor(&params[3]);
         zval_dtor(&retval);
     }
     efree(req->buf.base);
     efree(req);
 }
-*/
 
 static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     buf->base = emalloc(suggested_size);
@@ -333,4 +329,28 @@ PHP_METHOD(UVTcp, close){
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
     
     tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
+}
+
+PHP_METHOD(UVTcp, write){
+    long ret;
+    zval *self = getThis();
+    char *buf;
+    int buf_len;
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &buf, &buf_len)) {
+        return;
+    }
+    
+    ret = tcp_write_raw((uv_stream_t *) &resource->uv_tcp, buf, buf_len);
+    RETURN_LONG(ret);
+}
+
+int tcp_write_raw(uv_stream_t * handle, char *message, int size) {
+    write_req_t *req;
+    req = emalloc(sizeof(write_req_t));
+    req->buf.base = emalloc(size);
+    req->buf.len = size;
+    memcpy(req->buf.base, message, size);
+    return uv_write((uv_write_t *) req, handle, &req->buf, 1, write_cb);
 }

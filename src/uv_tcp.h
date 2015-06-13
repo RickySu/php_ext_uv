@@ -20,6 +20,10 @@ ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, listen), 0)
     ZEND_ARG_INFO(0, onConnectCallback)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, write), 0)
+    ZEND_ARG_INFO(0, buf)
+ZEND_END_ARG_INFO()
+
 typedef struct uv_tcp_ext_s{
     uv_tcp_t uv_tcp;
     uint flag;
@@ -41,6 +45,7 @@ typedef struct write_req_s{
 static zend_object_value createUVTcpResource(zend_class_entry *class_type TSRMLS_DC);
 
 void freeUVTcpResource(void *object TSRMLS_DC);
+int tcp_write_raw(uv_stream_t * handle, char *message, int size);
 
 PHP_METHOD(UVTcp, getSockname);
 PHP_METHOD(UVTcp, getSockport);
@@ -48,6 +53,7 @@ PHP_METHOD(UVTcp, getPeername);
 PHP_METHOD(UVTcp, getPeerport);
 PHP_METHOD(UVTcp, listen);
 PHP_METHOD(UVTcp, accept);
+PHP_METHOD(UVTcp, write);
 PHP_METHOD(UVTcp, setCallback);
 PHP_METHOD(UVTcp, close);
 
@@ -59,6 +65,7 @@ DECLARE_FUNCTION_ENTRY(UVTcp) = {
     PHP_ME(UVTcp, listen, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVTcp, accept, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVTcp, setCallback, ARGINFO(UVTcp, setCallback), ZEND_ACC_PUBLIC)
+    PHP_ME(UVTcp, write, ARGINFO(UVTcp, write), ZEND_ACC_PUBLIC)
     PHP_ME(UVTcp, close, NULL, ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
