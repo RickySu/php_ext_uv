@@ -20,6 +20,10 @@ ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, listen), 0)
     ZEND_ARG_INFO(0, onConnectCallback)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, shutdown), 0)
+    ZEND_ARG_INFO(0, onShutdownCallback)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, write), 0)
     ZEND_ARG_INFO(0, buf)
 ZEND_END_ARG_INFO()
@@ -56,6 +60,7 @@ PHP_METHOD(UVTcp, accept);
 PHP_METHOD(UVTcp, write);
 PHP_METHOD(UVTcp, setCallback);
 PHP_METHOD(UVTcp, close);
+PHP_METHOD(UVTcp, shutdown);
 
 DECLARE_FUNCTION_ENTRY(UVTcp) = {    
     PHP_ME(UVTcp, getSockname, NULL, ZEND_ACC_PUBLIC)
@@ -67,6 +72,7 @@ DECLARE_FUNCTION_ENTRY(UVTcp) = {
     PHP_ME(UVTcp, setCallback, ARGINFO(UVTcp, setCallback), ZEND_ACC_PUBLIC)
     PHP_ME(UVTcp, write, ARGINFO(UVTcp, write), ZEND_ACC_PUBLIC)
     PHP_ME(UVTcp, close, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(UVTcp, shutdown, ARGINFO(UVTcp, shutdown), ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 #endif
