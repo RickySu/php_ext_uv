@@ -197,6 +197,7 @@ PHP_METHOD(UVUdp, bind){
     }
     
     memcpy(cstr_host, host, host_len);
+    cstr_host[host_len] = '\0';
     if((ret = uv_ip4_addr(cstr_host, port&0xffff, &addr)) != 0){
         RETURN_LONG(ret);
     }
@@ -261,11 +262,13 @@ PHP_METHOD(UVUdp, sendTo){
     }
     
     req = emalloc(sizeof(send_req_t));
+    cstr_dest[dest_len] = '\0';    
     memcpy(cstr_dest, dest, dest_len);
     if((ret = uv_ip4_addr(cstr_dest, port&0xffff, &req->addr)) != 0){
         efree(req);
         RETURN_LONG(ret);
-    }    
+    }
+    
     req->buf.base = emalloc(message_len);
     req->buf.len = message_len;
     memcpy(req->buf.base, message, message_len);
