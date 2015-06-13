@@ -175,6 +175,22 @@ static inline void resolveSocket(uv_tcp_ext_t *resource){
     }
 }
 
+static inline void resolvePeerSocket(uv_tcp_ext_t *resource){
+    struct sockaddr addr;
+    int addrlen;
+    int ret;
+    if(resource->peerPort == 0){
+        addrlen = sizeof addr;
+        if(ret = uv_tcp_getpeername(&resource->uv_tcp, &addr, &addrlen)){
+            return;
+        }
+        resource->peerPort = sock_port(&addr);
+        resource->peerAddr = sock_addr(&addr);
+    }
+}
+
+
+
 PHP_METHOD(UVTcp, getSockname){
     zval *self = getThis();
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
@@ -194,6 +210,47 @@ PHP_METHOD(UVTcp, getSockport){
    }
    RETURN_LONG(resource->sockPort);
 }
+
+PHP_METHOD(UVTcp, getPeername){
+    zval *self = getThis();
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    resolvePeerSocket(resource);
+    if(resource->peerPort == 0){
+        RETURN_FALSE;
+    }
+    RETURN_STRING(resource->peerAddr, 1);
+}
+
+PHP_METHOD(UVTcp, getPeerport){
+   zval *self = getThis();
+   uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+   resolvePeerSocket(resource);
+   if(resource->peerPort == 0){
+       RETURN_FALSE;
+   }
+   RETURN_LONG(resource->peerPort);
+}
+
+PHP_METHOD(UVTcp, accept){
+    long ret, port;
+    zval *self = getThis();
+    zval *onConnectCallback;
+    const char *host;
+    int host_len;
+    char cstr_host[30];
+    struct sockaddr_in addr;
+    
+    uv_tcp_ext_t *server_resource, *client_resource;
+    server_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    object_init_ex(return_value, CLASS_ENTRY(UVTcp));
+    client_resource = FETCH_OBJECT_RESOURCE(return_value, uv_tcp_ext_t); 
+    
+    if(ret = uv_accept((uv_stream_t *) &server_resource->uv_tcp, (uv_stream_t *) &client_resource->uv_tcp)) {
+        zval_ptr_dtor(&return_value);
+        RETURN_LONG(ret);
+    }
+    client_resource->flag |= UV_TCP_HANDLE_INTERNAL_REF;
+}    
 
 PHP_METHOD(UVTcp, listen){
     long ret, port;
