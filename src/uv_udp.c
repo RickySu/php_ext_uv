@@ -243,6 +243,7 @@ PHP_METHOD(UVUdp, setCallback){
         resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
         Z_ADDREF_P(resource->object);
     }
+     RETURN_LONG(ret);
 }
 
 PHP_METHOD(UVUdp, sendTo){
