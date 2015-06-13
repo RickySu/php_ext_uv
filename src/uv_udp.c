@@ -22,7 +22,7 @@ static void release(uv_udp_ext_t *resource){
 
     if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
-        Z_ADDREF_P(resource->object);
+        Z_DELREF_P(resource->object);
     }
 
     if(resource->sockPort != 0){
