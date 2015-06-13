@@ -26,8 +26,6 @@ ZEND_END_ARG_INFO()
 typedef struct uv_udp_ext_s{
     uv_udp_t uv_udp;
     uint flag;
-    uv_connect_t connect_req;
-    uv_shutdown_t shutdown_req;
     char *sockAddr;
     int sockPort;    
     zval *object;

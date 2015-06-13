@@ -144,7 +144,7 @@ void freeUVUdpResource(void *object TSRMLS_DC) {
     efree(resource);
 }
 
-inline void resolveSocket(uv_udp_ext_t *resource){
+static inline void resolveSocket(uv_udp_ext_t *resource){
     struct sockaddr addr;
     int addrlen;
     int ret;
