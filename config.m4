@@ -11,6 +11,7 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
 
   MODULES="
       php_ext_uv.c
+      src/util.c
       src/uv_loop.c
       src/uv_signal.c
       src/uv_timer.c
