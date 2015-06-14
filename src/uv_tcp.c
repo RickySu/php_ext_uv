@@ -19,6 +19,21 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("shutdownCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
+static void client_connection_cb(uv_connect_t* req, int status) {
+    zval *connect_cb;
+    zval retval;
+    uv_tcp_ext_t *resource = (uv_tcp_ext_t *) req->handle;
+    zval *params[] = {resource->object, NULL};
+    ZVAL_NULL(&retval);
+    MAKE_STD_ZVAL(params[1]);
+    ZVAL_LONG(params[1], status);
+    TSRMLS_FETCH();
+    connect_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("connectCallback"), 0 TSRMLS_CC);
+    call_user_function(CG(function_table), NULL, connect_cb, &retval, 2, params TSRMLS_CC);
+    zval_ptr_dtor(&params[1]);
+    zval_dtor(&retval);
+}
+
 static void connection_cb(uv_tcp_ext_t *resource, int status) {
     zval *connect_cb;
     zval retval;
@@ -34,15 +49,15 @@ static void connection_cb(uv_tcp_ext_t *resource, int status) {
 }
 
 static void release(uv_tcp_ext_t *resource){
-/*
+
     if(resource->flag & UV_TCP_READ_START){
         resource->flag &= UV_TCP_READ_START;
-        uv_tcp_recv_stop(&resource->uv_tcp);
+        uv_read_stop((uv_stream_t *) &resource->uv_tcp);
     }
     
     if(resource->flag & UV_TCP_HANDLE_START){
         resource->flag &= ~UV_TCP_HANDLE_START;
-        uv_tcp_recv_stop(&resource->uv_tcp);
+        uv_unref((uv_handle_t *) &resource->uv_tcp);
     }
 
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
@@ -55,7 +70,13 @@ static void release(uv_tcp_ext_t *resource){
         efree(resource->sockAddr);
         resource->sockAddr = NULL;
     }
-*/
+
+    if(resource->peerPort != 0){
+        resource->peerPort = 0;
+        efree(resource->peerAddr);
+        resource->peerAddr = NULL;
+    }
+
 }
 
 static void shutdown_cb(uv_shutdown_t* req, int status) {
@@ -408,3 +429,41 @@ PHP_METHOD(UVTcp, shutdown){
     RETURN_LONG(ret);
 }
 
+PHP_METHOD(UVTcp, connect){
+    long ret, port;
+    zval *self = getThis();
+    zval *onConnectCallback;
+    const char *host;
+    int host_len;
+    char cstr_host[30];
+    struct sockaddr_in addr;
+    
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz", &host, &host_len, &port, &onConnectCallback)) {
+        return;
+    }
+    
+    if(host_len == 0 || host_len >= 30){        
+        RETURN_LONG(-1);
+    }
+
+    memcpy(cstr_host, host, host_len);
+    cstr_host[host_len] = '\0';
+    if((ret = uv_ip4_addr(cstr_host, port&0xffff, &addr)) != 0){
+        RETURN_LONG(ret);
+    }
+    
+    if((ret = uv_tcp_connect(&resource->connect_req, &resource->uv_tcp, (const struct sockaddr *) &addr, client_connection_cb)) != 0){
+        RETURN_LONG(ret);
+    }
+    
+    if (!zend_is_callable(onConnectCallback, 0, NULL TSRMLS_CC)) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onConnectCallback is not callable");
+    }    
+    
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("connectCallback"), onConnectCallback TSRMLS_CC);
+    setSelfReference(resource);
+    resource->flag |= UV_TCP_HANDLE_START;    
+    RETURN_LONG(ret);
+}
