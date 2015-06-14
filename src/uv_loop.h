@@ -16,6 +16,7 @@ ZEND_END_ARG_INFO()
 PHP_METHOD(UVLoop, __construct);
 PHP_METHOD(UVLoop, defaultLoop);
 PHP_METHOD(UVLoop, run);
+PHP_METHOD(UVLoop, stop);
 PHP_METHOD(UVLoop, alive);
 PHP_METHOD(UVLoop, updateTime);
 PHP_METHOD(UVLoop, now);
@@ -26,6 +27,7 @@ DECLARE_FUNCTION_ENTRY(UVLoop) = {
     PHP_ME(UVLoop, __construct, NULL, ZEND_ACC_PRIVATE|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
     PHP_ME(UVLoop, defaultLoop, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(UVLoop, run, ARGINFO(UVLoop, run), ZEND_ACC_PUBLIC)
+    PHP_ME(UVLoop, stop, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVLoop, alive, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVLoop, updateTime, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVLoop, now, NULL, ZEND_ACC_PUBLIC)

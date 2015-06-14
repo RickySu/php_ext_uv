@@ -45,6 +45,10 @@ PHP_METHOD(UVLoop, run){
     uv_run(uv_default_loop(), mode);
 }
 
+PHP_METHOD(UVLoop, stop) {
+    uv_stop(uv_default_loop());
+}
+
 PHP_METHOD(UVLoop, alive) {
     RETURN_LONG(uv_loop_alive(uv_default_loop()));
 }
