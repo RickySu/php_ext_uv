@@ -61,6 +61,7 @@ PHP_METHOD(UVTcp, write);
 PHP_METHOD(UVTcp, setCallback);
 PHP_METHOD(UVTcp, close);
 PHP_METHOD(UVTcp, shutdown);
+PHP_METHOD(UVTcp, __construct);
 
 DECLARE_FUNCTION_ENTRY(UVTcp) = {    
     PHP_ME(UVTcp, getSockname, NULL, ZEND_ACC_PUBLIC)

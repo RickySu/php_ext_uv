@@ -1,5 +1,14 @@
 #include "uv_tcp.h"
 
+static inline void setSelfReference(uv_tcp_ext_t *resource)
+{
+    if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
+        return;
+    }
+    Z_ADDREF_P(resource->object);
+    resource->flag |= UV_TCP_HANDLE_INTERNAL_REF;
+}
+
 CLASS_ENTRY_FUNCTION_D(UVTcp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTcp, createUVTcpResource);
     OBJECT_HANDLER(UVTcp).clone_obj = NULL;
@@ -143,8 +152,6 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
     zval_dtor(&retval);    
 }
 
-
-
 static zend_object_value createUVTcpResource(zend_class_entry *ce TSRMLS_DC) {
     zend_object_value retval;
     uv_tcp_ext_t *resource;
@@ -203,8 +210,6 @@ static inline void resolvePeerSocket(uv_tcp_ext_t *resource){
     }
 }
 
-
-
 PHP_METHOD(UVTcp, getSockname){
     zval *self = getThis();
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
@@ -248,7 +253,6 @@ PHP_METHOD(UVTcp, getPeerport){
 PHP_METHOD(UVTcp, accept){
     long ret, port;
     zval *self = getThis();
-    zval *onConnectCallback;
     const char *host;
     int host_len;
     char cstr_host[30];
@@ -263,9 +267,7 @@ PHP_METHOD(UVTcp, accept){
         zval_ptr_dtor(&return_value);
         RETURN_LONG(ret);
     }
-    client_resource->object = return_value;
-    Z_ADDREF_P(client_resource->object);    
-    client_resource->flag |= UV_TCP_HANDLE_INTERNAL_REF;
+    client_resource->object = return_value;   
 }    
 
 PHP_METHOD(UVTcp, listen){
@@ -306,10 +308,8 @@ PHP_METHOD(UVTcp, listen){
     }    
     
     zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("connectCallback"), onConnectCallback TSRMLS_CC);
-    resource->object = self;
-    Z_ADDREF_P(resource->object);
-    resource->flag |= UV_TCP_HANDLE_START;
-    
+    setSelfReference(resource);
+    resource->flag |= UV_TCP_HANDLE_START;    
     RETURN_LONG(ret);
 }
 
@@ -339,7 +339,8 @@ PHP_METHOD(UVTcp, setCallback){
         zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("readCallback"), onReadCallback TSRMLS_CC);
         zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("writeCallback"), onWriteCallback TSRMLS_CC);
         zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("errorCallback"), onErrorCallback TSRMLS_CC);
-        resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
+        resource->flag |= (UV_TCP_READ_START | UV_TCP_HANDLE_START);
+        setSelfReference(resource);
     }
      RETURN_LONG(ret);
 }
@@ -350,6 +351,12 @@ PHP_METHOD(UVTcp, close){
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
     
     tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
+}
+
+PHP_METHOD(UVTcp, __construct){
+    zval *self = getThis();
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    resource->object = self;
 }
 
 PHP_METHOD(UVTcp, write){
@@ -364,6 +371,7 @@ PHP_METHOD(UVTcp, write){
     }
     
     ret = tcp_write_raw((uv_stream_t *) &resource->uv_tcp, buf, buf_len);
+    resource->flag |= UV_TCP_HANDLE_START;
     RETURN_LONG(ret);
 }
 
@@ -394,8 +402,9 @@ PHP_METHOD(UVTcp, shutdown){
     
     if((ret = uv_shutdown(&resource->shutdown_req, (uv_stream_t *) &resource->uv_tcp, shutdown_cb)) == 0){
         zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("shutdownCallback"), onShutdownCallback TSRMLS_CC);
-        resource->flag |= UV_TCP_HANDLE_START;
+        setSelfReference(resource);
     }
     
     RETURN_LONG(ret);
 }
+
