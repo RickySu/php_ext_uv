@@ -1,31 +1,45 @@
 #include "uv_loop.h"
 
 CLASS_ENTRY_FUNCTION_D(UVLoop){
-    REGISTER_CLASS(UVLoop);
+    REGISTER_CLASS_WITH_OBJECT_NEW(UVLoop, createUVLoopResource);
+    OBJECT_HANDLER(UVLoop).clone_obj = NULL;
     zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_DEFAULT"), RUN_DEFAULT TSRMLS_CC);
     zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_ONCE"), RUN_ONCE TSRMLS_CC);
     zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_NOWAIT"), RUN_NOWAIT TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), ZEND_ACC_PRIVATE|ZEND_ACC_STATIC TSRMLS_CC);
 }
 
-PHP_METHOD(UVLoop, __construct){
+static zend_object_value createUVLoopResource(zend_class_entry *ce TSRMLS_DC) {
+    zend_object_value retval;
+    uv_loop_ext_t *resource;
+    resource = (uv_loop_ext_t *) emalloc(sizeof(uv_loop_ext_t));
+    memset(resource, 0, sizeof(uv_loop_ext_t));
+    uv_loop_init(&resource->loop);
 
+    zend_object_std_init(&resource->zo, ce TSRMLS_CC);
+    object_properties_init(&resource->zo, ce);
+    retval.handle = zend_objects_store_put(
+        &resource->zo,
+        (zend_objects_store_dtor_t) zend_objects_destroy_object,
+        freeUVLoopResource,
+        NULL TSRMLS_CC);
+                                    
+    retval.handlers = &OBJECT_HANDLER(UVLoop);
+    return retval;
 }
 
-PHP_METHOD(UVLoop, defaultLoop){    
-    zval *instance = zend_read_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), 1 TSRMLS_CC);
-    if(ZVAL_IS_NULL(instance)){
-        instance = NULL;
-        MAKE_STD_ZVAL(instance);
-        object_init_ex(instance, CLASS_ENTRY(UVLoop));
-        zend_update_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), instance TSRMLS_CC);
-    }
-    RETURN_ZVAL(instance, 1, 0);
+void freeUVLoopResource(void *object TSRMLS_DC) {
+    uv_loop_ext_t *resource;
+    resource = FETCH_RESOURCE(object, uv_loop_ext_t);
+    uv_loop_close(&resource->loop);
+    zend_object_std_dtor(&resource->zo TSRMLS_CC);
+    efree(resource);
 }
 
 PHP_METHOD(UVLoop, run){
     long option = RUN_DEFAULT;
     uv_run_mode mode;
+    zval *self = getThis();
+    uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
     if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &option) == FAILURE) {
         return;
     }
@@ -42,31 +56,43 @@ PHP_METHOD(UVLoop, run){
         default:
             mode = UV_RUN_DEFAULT;        
     }
-    uv_run(uv_default_loop(), mode);
+    uv_run(&resource->loop, mode);
 }
 
 PHP_METHOD(UVLoop, stop) {
-    uv_stop(uv_default_loop());
+    zval *self = getThis();
+    uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
+    uv_stop(&resource->loop);
 }
 
 PHP_METHOD(UVLoop, alive) {
-    RETURN_LONG(uv_loop_alive(uv_default_loop()));
+    zval *self = getThis();
+    uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
+    RETURN_LONG(uv_loop_alive(&resource->loop));
 }
 
 PHP_METHOD(UVLoop, updateTime) {
-    uv_update_time(uv_default_loop());
+    zval *self = getThis();
+    uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
+    uv_update_time(&resource->loop);
 }
 
 PHP_METHOD(UVLoop, now) {
-    RETURN_LONG(uv_now(uv_default_loop()));
+    zval *self = getThis();
+    uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
+    RETURN_LONG(uv_now(&resource->loop));
 }
 
 PHP_METHOD(UVLoop, backendFd) {
-    RETURN_LONG(uv_backend_fd(uv_default_loop()));
+    zval *self = getThis();
+    uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
+    RETURN_LONG(uv_backend_fd(&resource->loop));
 }
 
 PHP_METHOD(UVLoop, backendTimeout) {
-    RETURN_LONG(uv_backend_timeout(uv_default_loop()));
+    zval *self = getThis();
+    uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
+    RETURN_LONG(uv_backend_timeout(&resource->loop));
 }
 
 

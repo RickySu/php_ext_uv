@@ -1,6 +1,7 @@
 #ifndef _UV_SIGNAL_H
 #define _UV_SIGNAL_H
 #include "../php_ext_uv.h"
+#include "uv_loop_resource.h"
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVSignal, start), 0)
     ZEND_ARG_INFO(0, signal_cb)
