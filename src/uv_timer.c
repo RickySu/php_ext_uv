@@ -3,6 +3,7 @@
 CLASS_ENTRY_FUNCTION_D(UVTimer){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTimer, createUVTimerResource);
     OBJECT_HANDLER(UVTimer).clone_obj = NULL;
+    zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("callback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
@@ -23,7 +24,6 @@ static zend_object_value createUVTimerResource(zend_class_entry *ce TSRMLS_DC) {
     resource = (uv_timer_ext_t *) emalloc(sizeof(uv_timer_ext_t));
     memset(resource, 0, sizeof(uv_timer_ext_t));
 
-    uv_timer_init(uv_default_loop(), &resource->uv_timer);
     zend_object_std_init(&resource->zo, ce TSRMLS_CC);
     object_properties_init(&resource->zo, ce);
 
@@ -43,10 +43,28 @@ void freeUVTimerResource(void *object TSRMLS_DC) {
     if(resource->start){
         uv_timer_stop((uv_timer_t *) resource);
     }
-    
     uv_unref((uv_handle_t *) resource);
     zend_object_std_dtor(&resource->zo TSRMLS_CC);
     efree(resource);
+}
+
+PHP_METHOD(UVTimer, __construct){
+    zval *loop;
+    zval *self = getThis();
+    uv_timer_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_timer_ext_t);
+        
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &loop)) {
+        return;
+    }
+    
+    if (IS_OBJECT != Z_TYPE_P(loop) ||
+        instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
+        php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
+        return;
+    }
+    
+    zend_update_property(CLASS_ENTRY(UVTimer), self, ZEND_STRL("loop"), loop TSRMLS_CC);
+    uv_timer_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_timer_t *) resource);
 }
 
 PHP_METHOD(UVTimer, start){
