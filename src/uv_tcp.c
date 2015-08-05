@@ -12,6 +12,7 @@ static inline void setSelfReference(uv_tcp_ext_t *resource)
 CLASS_ENTRY_FUNCTION_D(UVTcp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTcp, createUVTcpResource);
     OBJECT_HANDLER(UVTcp).clone_obj = NULL;
+    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("readCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("writeCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("errorCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
@@ -179,7 +180,6 @@ static zend_object_value createUVTcpResource(zend_class_entry *ce TSRMLS_DC) {
     resource = (uv_tcp_ext_t *) emalloc(sizeof(uv_tcp_ext_t));
     memset(resource, 0, sizeof(uv_tcp_ext_t));
 
-    uv_tcp_init(uv_default_loop(), &resource->uv_tcp);
     zend_object_std_init(&resource->zo, ce TSRMLS_CC);
     object_properties_init(&resource->zo, ce);
     
@@ -273,6 +273,7 @@ PHP_METHOD(UVTcp, getPeerport){
 
 PHP_METHOD(UVTcp, accept){
     long ret, port;
+    zval *loop;
     zval *self = getThis();
     const char *host;
     int host_len;
@@ -283,12 +284,16 @@ PHP_METHOD(UVTcp, accept){
     server_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
     object_init_ex(return_value, CLASS_ENTRY(UVTcp));
     client_resource = FETCH_OBJECT_RESOURCE(return_value, uv_tcp_ext_t); 
+
+    loop = zend_read_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), 0 TSRMLS_CC);
+    zend_update_property(CLASS_ENTRY(UVTcp), return_value, ZEND_STRL("loop"), loop TSRMLS_CC);
+    uv_tcp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_tcp_t *) client_resource);    
     
     if(ret = uv_accept((uv_stream_t *) &server_resource->uv_tcp, (uv_stream_t *) &client_resource->uv_tcp)) {
         zval_ptr_dtor(&return_value);
         RETURN_LONG(ret);
     }
-    client_resource->object = return_value;   
+    client_resource->object = return_value;
 }    
 
 PHP_METHOD(UVTcp, listen){
@@ -375,9 +380,23 @@ PHP_METHOD(UVTcp, close){
 }
 
 PHP_METHOD(UVTcp, __construct){
+    zval *loop;
     zval *self = getThis();
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+   
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &loop)) {
+        return;
+    }
+    
+    if (IS_OBJECT != Z_TYPE_P(loop) ||
+        instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
+        php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
+        return;
+    }
+            
     resource->object = self;
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop TSRMLS_CC);
+    uv_tcp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_tcp_t *) resource);
 }
 
 PHP_METHOD(UVTcp, write){

@@ -2,7 +2,8 @@
 Check for UVTime once
 --FILE--
 <?php 
-$timer = new UVTimer();
+$loop = new UVLoop();
+$timer = new UVTimer($loop);
 $time = time();
 $timer->start(function($timer2) use($timer, $time){
     $timediff = time() - $time;
@@ -10,7 +11,7 @@ $timer->start(function($timer2) use($timer, $time){
     echo "timer object is ";
     var_dump($timer === $timer2);    
 }, 2000);
-UVLoop::defaultLoop()->run();
+$loop->run();
 ?>
 --EXPECT--
 timer alerm after 2 secs

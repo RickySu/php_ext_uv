@@ -1,12 +1,17 @@
 #ifndef _UV_TCP_H
 #define _UV_TCP_H
 #include "../php_ext_uv.h"
+#include "uv_loop_resource.h"
 
 #define UV_TCP_HANDLE_INTERNAL_REF 1
 #define UV_TCP_HANDLE_START (1<<1)
 #define UV_TCP_READ_START (1<<2)
 #define UV_TCP_CLOSING_START (1<<3)
 #define UV_TCP_WRITE_CALLBACK_ENABLE (1<<4)
+
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, __construct), 0)
+    ZEND_ARG_INFO(0, loop)
+ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, setCallback), 0)
     ZEND_ARG_INFO(0, onRecvCallback)

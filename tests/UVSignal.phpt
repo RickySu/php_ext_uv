@@ -2,7 +2,8 @@
 Check for UVSignal
 --FILE--
 <?php 
-$signal = new UVSignal();
+$loop = new UVLoop();
+$signal = new UVSignal($loop);
 $signal->start(function($signal2, $signno) use($signal){
     echo "receive signal\n";
     echo "signal object is ";
@@ -15,7 +16,7 @@ if($pid = pcntl_fork()){
     pcntl_wait($status);
 }
 else{
-    UVLoop::defaultLoop()->run();
+    $loop->run();
 }
 ?>
 --EXPECT--

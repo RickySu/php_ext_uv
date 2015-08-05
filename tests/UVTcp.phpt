@@ -2,7 +2,8 @@
 Check for UVTcp
 --FILE--
 <?php
-$tcp = new UVTcp();
+$loop = new UVLoop();
+$tcp = new UVTcp($loop);
 $tcp->listen('127.0.0.1', 54321, function($tcp2, $status) use($tcp){
     echo "on connect $status\n";
     var_dump($tcp === $tcp2);
@@ -27,7 +28,7 @@ $tcp->listen('127.0.0.1', 54321, function($tcp2, $status) use($tcp){
 });
 echo "server: {$tcp->getSockname()}:{$tcp->getSockport()}\n";
 
-$tcp2 = new UVTcp();
+$tcp2 = new UVTcp($loop);
 $tcp2->connect('127.0.0.1', 54321, function($tcp2, $status){
     $tcp2->setCallback(function($tcp2, $data){
         echo "Server response: $data\n";
@@ -39,7 +40,7 @@ $tcp2->connect('127.0.0.1', 54321, function($tcp2, $status){
     });
     $tcp2->write("client send some data");
 });
-UVLoop::defaultLoop()->run();
+$loop->run();
 ?>
 --EXPECT--
 server: 127.0.0.1:54321
