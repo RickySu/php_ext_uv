@@ -3,6 +3,7 @@
 CLASS_ENTRY_FUNCTION_D(UVUdp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVUdp, createUVUdpResource);
     OBJECT_HANDLER(UVUdp).clone_obj = NULL;
+    zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("recvCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("sendCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("errorCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
@@ -120,7 +121,6 @@ static zend_object_value createUVUdpResource(zend_class_entry *ce TSRMLS_DC) {
     resource = (uv_udp_ext_t *) emalloc(sizeof(uv_udp_ext_t));
     memset(resource, 0, sizeof(uv_udp_ext_t));
 
-    uv_udp_init(uv_default_loop(), &resource->uv_udp);
     zend_object_std_init(&resource->zo, ce TSRMLS_CC);
     object_properties_init(&resource->zo, ce);
     
@@ -156,6 +156,25 @@ static inline void resolveSocket(uv_udp_ext_t *resource){
         resource->sockPort = sock_port(&addr);
         resource->sockAddr = sock_addr(&addr);
     }
+}
+
+PHP_METHOD(UVUdp, __construct){
+    zval *loop;
+    zval *self = getThis();
+    uv_udp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_udp_ext_t);
+                    
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &loop)) {
+        return;
+    }
+                                         
+    if (IS_OBJECT != Z_TYPE_P(loop) ||
+        instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
+        php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
+        return;
+    }
+                                                                              
+    zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("loop"), loop TSRMLS_CC);
+    uv_udp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_udp_t *) resource);
 }
 
 PHP_METHOD(UVUdp, getSockname){

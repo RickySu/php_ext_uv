@@ -1,10 +1,15 @@
 #ifndef _UV_UDP_H
 #define _UV_UDP_H
 #include "../php_ext_uv.h"
+#include "uv_loop_resource.h"
 
 #define UV_UDP_HANDLE_INTERNAL_REF 1
 #define UV_UDP_HANDLE_START (1<<1)
 #define UV_UDP_READ_START (1<<2)
+
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVTimer, __construct), 0)
+    ZEND_ARG_INFO(0, loop)
+ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVUdp, bind), 0)
     ZEND_ARG_INFO(0, host)
@@ -42,6 +47,7 @@ static zend_object_value createUVUdpResource(zend_class_entry *class_type TSRMLS
 
 void freeUVUdpResource(void *object TSRMLS_DC);
 
+PHP_METHOD(UVUdp, __construct);
 PHP_METHOD(UVUdp, getSockname);
 PHP_METHOD(UVUdp, getSockport);
 PHP_METHOD(UVUdp, bind);
@@ -49,7 +55,8 @@ PHP_METHOD(UVUdp, setCallback);
 PHP_METHOD(UVUdp, close);
 PHP_METHOD(UVUdp, sendTo);
 
-DECLARE_FUNCTION_ENTRY(UVUdp) = {    
+DECLARE_FUNCTION_ENTRY(UVUdp) = {
+    PHP_ME(UVUdp, __construct, ARGINFO(UVUdp, __construct), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
     PHP_ME(UVUdp, getSockname, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVUdp, getSockport, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVUdp, close, NULL, ZEND_ACC_PUBLIC)
