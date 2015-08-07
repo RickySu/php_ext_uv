@@ -3,6 +3,7 @@
 CLASS_ENTRY_FUNCTION_D(UVSSL){
     EXTENDS_CLASS_WITH_OBJECT_NEW(UVSSL, createUVSSLResource, UVTcp);
     OBJECT_HANDLER(UVSSL).clone_obj = NULL;    
+    zend_declare_property_null(CLASS_ENTRY(UVSSL), ZEND_STRL("sslServerNameCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV2);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV3);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV23);
@@ -12,6 +13,27 @@ CLASS_ENTRY_FUNCTION_D(UVSSL){
 }
 
 static int sni_cb(SSL *s, int *ad, void *arg) {
+    long n;
+    zval *params[] = {NULL};
+    zval retval;
+    uv_ssl_ext_t *resource = (uv_ssl_ext_t *) arg;
+    uv_tcp_ext_t *tcp_resource = &resource->uv_tcp_ext;
+    const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
+    zval *sslServerNameCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslServerNameCallback"), 0 TSRMLS_CC); 
+    if(servername != NULL && IS_NULL != Z_TYPE_P(sslServerNameCallback)){
+        MAKE_STD_ZVAL(params[0]);
+        ZVAL_STR(params[0], STR_COPY(servername));
+        call_user_function(CG(function_table), NULL, sslServerNameCallback, &retval, 1, params TSRMLS_CC);
+        if(Z_TYPE_P(&retval) == IS_LONG){
+            n = Z_LVAL_P(&retval);
+            if(n>=0 && n<resource->nctx){
+                SSL_set_SSL_CTX(s, resource->ctx[n]);
+            }
+        }
+        zval_ptr_dtor(&params[0]);
+        zval_dtor(&retval);
+    }
+    return SSL_TLSEXT_ERR_OK;
 }
 
 static zend_object_value createUVSSLResource(zend_class_entry *ce TSRMLS_DC) {
