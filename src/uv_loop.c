@@ -3,9 +3,9 @@
 CLASS_ENTRY_FUNCTION_D(UVLoop){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVLoop, createUVLoopResource);
     OBJECT_HANDLER(UVLoop).clone_obj = NULL;
-    zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_DEFAULT"), RUN_DEFAULT TSRMLS_CC);
-    zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_ONCE"), RUN_ONCE TSRMLS_CC);
-    zend_declare_class_constant_long(CLASS_ENTRY(UVLoop), ZEND_STRL("RUN_NOWAIT"), RUN_NOWAIT TSRMLS_CC);
+    REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_DEFAULT);
+    REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_ONCE);
+    REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_NOWAIT);
 }
 
 static zend_object_value createUVLoopResource(zend_class_entry *ce TSRMLS_DC) {
