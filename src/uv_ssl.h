@@ -34,10 +34,6 @@ ZEND_BEGIN_ARG_INFO_EX(ARGINFO(UVSSL, setPrivateKey), 0, 0, 1)
     ZEND_ARG_INFO(0, n)
 ZEND_END_ARG_INFO()
 
-static zend_object_value createUVSSLResource(zend_class_entry *class_type TSRMLS_DC);
-
-void freeUVSSLResource(void *object TSRMLS_DC);
-
 typedef struct uv_ssl_ext_s{
     uv_tcp_ext_t uv_tcp_ext;
     const SSL_METHOD *ssl_method;
@@ -47,6 +43,10 @@ typedef struct uv_ssl_ext_s{
     BIO* read_bio;
     BIO* write_bio;
 } uv_ssl_ext_t;
+
+static zend_object_value createUVSSLResource(zend_class_entry *class_type TSRMLS_DC);
+void freeUVSSLResource(void *object TSRMLS_DC);
+static int write_bio_to_socket(uv_ssl_ext_t *resource);
 
 PHP_METHOD(UVSSL, __construct);
 PHP_METHOD(UVSSL, setSSLServerNameCallback);

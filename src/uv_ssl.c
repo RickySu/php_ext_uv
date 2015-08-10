@@ -13,18 +13,59 @@ CLASS_ENTRY_FUNCTION_D(UVSSL){
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1_2);
 }
 
+static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    buf->base = emalloc(suggested_size);
+    buf->len = suggested_size;
+    printf("aaa\n");
+}
+
+static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) {
+    TSRMLS_FETCH();
+    uv_tcp_ext_t *tcp_resource = (uv_tcp_ext_t *) resource;
+    zval *readCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("readCallback"), 0 TSRMLS_CC);
+    zval *errorCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("errorCallback"), 0 TSRMLS_CC);
+    zval *sslHandshakeCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslHandshakeCallback"), 0 TSRMLS_CC);
+    char read_buf[256];
+    int size, err, ret, read_buf_index;
+    if(nread > 0){
+        BIO_write(resource->read_bio, buf->base, nread);
+        if (!SSL_is_init_finished(resource->ssl)) {
+            ret = SSL_do_handshake(resource->ssl);
+            write_bio_to_socket(resource);
+            if(ret != 1){
+                err = SSL_get_error(resource->ssl, ret);
+                if (err == SSL_ERROR_WANT_READ) {
+                }
+                else if(err == SSL_ERROR_WANT_WRITE){
+                    write_bio_to_socket(resource);
+                }
+                else{
+                }
+            }
+            else{
+                printf("handshake ok\n");
+            }
+            efree(buf->base);
+            return;
+        }
+    }
+    efree(buf->base);
+}
+
 static int sni_cb(SSL *s, int *ad, void *arg) {
+    TSRMLS_FETCH();
     long n;
     zval *params[] = {NULL};
     zval retval;
     uv_ssl_ext_t *resource = (uv_ssl_ext_t *) arg;
     uv_tcp_ext_t *tcp_resource = &resource->uv_tcp_ext;
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
-    zval *sslServerNameCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslServerNameCallback"), 0 TSRMLS_CC); 
+    zval *sslServerNameCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslServerNameCallback"), 0 TSRMLS_CC);
     if(servername != NULL && IS_NULL != Z_TYPE_P(sslServerNameCallback)){
         ZVAL_NULL(&retval);
         MAKE_STD_ZVAL(params[0]);
-        //ZVAL_STR(params[0], STR_COPY(servername));
+        printf("sni cb:%s\n", servername);
+        ZVAL_STRING(params[0], servername, 1);
         call_user_function(CG(function_table), NULL, sslServerNameCallback, &retval, 1, params TSRMLS_CC);
         if(Z_TYPE_P(&retval) == IS_LONG){
             n = Z_LVAL_P(&retval);
@@ -62,7 +103,9 @@ static zend_object_value createUVSSLResource(zend_class_entry *ce TSRMLS_DC) {
 void freeUVSSLResource(void *object TSRMLS_DC) {
     uv_ssl_ext_t *resource;
     resource = (uv_ssl_ext_t *) FETCH_RESOURCE(object, uv_tcp_ext_t);
-    freeUVTcpResource(object);            
+    printf("gc\n");
+    return;
+    freeUVTcpResource(object);
 }
 
 PHP_METHOD(UVSSL, setSSLServerNameCallback){
@@ -164,8 +207,26 @@ PHP_METHOD(UVSSL, setCert){
 
 PHP_METHOD(UVSSL, accept){
     zval *self = getThis();
-    uv_tcp_ext_t *tcp_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
-    uv_ssl_ext_t *resource = (uv_ssl_ext_t *) tcp_resource;
+    uv_ssl_ext_t *server_resource = (uv_ssl_ext_t *) FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    uv_ssl_ext_t *client_resource;
+    
+    object_init_ex(return_value, CLASS_ENTRY(UVSSL));
+    if(!make_accepted_uv_tcp_object((uv_tcp_ext_t *) server_resource, return_value)){
+        RETURN_FALSE;
+    }
+    
+    client_resource = (uv_ssl_ext_t *) FETCH_OBJECT_RESOURCE(return_value, uv_tcp_ext_t);
+    if(uv_read_start((uv_stream_t *) client_resource, alloc_cb, (uv_read_cb) read_cb)){
+        zval_ptr_dtor(&return_value);
+        RETURN_FALSE;
+    }
+    printf("read start\n");
+    client_resource->ssl = SSL_new(server_resource->ctx[0]);
+    client_resource->read_bio = BIO_new(BIO_s_mem());
+    client_resource->write_bio = BIO_new(BIO_s_mem());
+    SSL_set_bio(client_resource->ssl, client_resource->read_bio, client_resource->write_bio);
+    SSL_set_accept_state(client_resource->ssl);
+    write_bio_to_socket(client_resource);
 }
 
 PHP_METHOD(UVSSL, __construct){
@@ -231,4 +292,20 @@ PHP_METHOD(UVSSL, __construct){
         SSL_CTX_set_tlsext_servername_arg(resource->ctx[0], resource);
     }
 #endif
+}
+
+static int write_bio_to_socket(uv_ssl_ext_t *resource){
+    char buf[512];
+    int hasread, ret;
+    while(1){
+        hasread  = BIO_read(resource->write_bio, buf, sizeof(buf));
+        if(hasread <= 0){
+            return 0;
+        }
+        ret = tcp_write_raw((uv_stream_t *) resource, buf, hasread);
+        if(ret != 0){
+            break;   
+        }
+    }
+    return ret;
 }

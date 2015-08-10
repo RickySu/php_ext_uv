@@ -281,34 +281,25 @@ PHP_METHOD(UVTcp, getPeerport){
 
 PHP_METHOD(UVTcp, accept){
     long ret, port;
-    zval *loop;
     zval *self = getThis();
     const char *host;
     int host_len;
     char cstr_host[30];
     struct sockaddr_in addr;
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    uv_tcp_ext_t *client_resource;
     
-    uv_tcp_ext_t *server_resource, *client_resource;
-    server_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
     object_init_ex(return_value, CLASS_ENTRY(UVTcp));
-    client_resource = FETCH_OBJECT_RESOURCE(return_value, uv_tcp_ext_t); 
-
-    loop = zend_read_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), 0 TSRMLS_CC);
-    zend_update_property(CLASS_ENTRY(UVTcp), return_value, ZEND_STRL("loop"), loop TSRMLS_CC);
-    uv_tcp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_tcp_t *) client_resource);    
-    
-    if(uv_accept((uv_stream_t *) &server_resource->uv_tcp, (uv_stream_t *) &client_resource->uv_tcp)) {
-        zval_ptr_dtor(&return_value);
+    if(!make_accepted_uv_tcp_object(resource, return_value)){
         RETURN_FALSE;
     }
     
+    client_resource = FETCH_OBJECT_RESOURCE(return_value, uv_tcp_ext_t);
     if(uv_read_start((uv_stream_t *) client_resource, alloc_cb, (uv_read_cb) read_cb)){
         zval_ptr_dtor(&return_value);
         RETURN_FALSE;
     }
-    client_resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
-    client_resource->object = return_value;
-}    
+}
 
 PHP_METHOD(UVTcp, listen){
     long ret, port;
@@ -497,4 +488,21 @@ PHP_METHOD(UVTcp, connect){
     setSelfReference(resource);
     resource->flag |= UV_TCP_HANDLE_START;    
     RETURN_LONG(ret);
+}
+
+zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client){
+    uv_tcp_ext_t *client_resource;
+    client_resource = FETCH_OBJECT_RESOURCE(client, uv_tcp_ext_t);
+    zval *loop = zend_read_property(CLASS_ENTRY(UVTcp), server_resource->object, ZEND_STRL("loop"), 0 TSRMLS_CC);
+    zend_update_property(CLASS_ENTRY(UVTcp), client, ZEND_STRL("loop"), loop TSRMLS_CC);
+    uv_tcp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_tcp_t *) client_resource);    
+    
+    if(uv_accept((uv_stream_t *) &server_resource->uv_tcp, (uv_stream_t *) &client_resource->uv_tcp)) {
+        zval_ptr_dtor(&client);
+        return 0;
+    }
+    
+    client_resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
+    client_resource->object = client;
+    return 1;
 }
