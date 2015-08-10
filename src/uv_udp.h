@@ -7,7 +7,7 @@
 #define UV_UDP_HANDLE_START (1<<1)
 #define UV_UDP_READ_START (1<<2)
 
-ZEND_BEGIN_ARG_INFO(ARGINFO(UVTimer, __construct), 0)
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVUdp, __construct), 0)
     ZEND_ARG_INFO(0, loop)
 ZEND_END_ARG_INFO()
 

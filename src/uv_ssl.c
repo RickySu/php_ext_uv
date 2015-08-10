@@ -21,8 +21,9 @@ static int sni_cb(SSL *s, int *ad, void *arg) {
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
     zval *sslServerNameCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslServerNameCallback"), 0 TSRMLS_CC); 
     if(servername != NULL && IS_NULL != Z_TYPE_P(sslServerNameCallback)){
+        ZVAL_NULL(&retval);
         MAKE_STD_ZVAL(params[0]);
-        ZVAL_STR(params[0], STR_COPY(servername));
+        //ZVAL_STR(params[0], STR_COPY(servername));
         call_user_function(CG(function_table), NULL, sslServerNameCallback, &retval, 1, params TSRMLS_CC);
         if(Z_TYPE_P(&retval) == IS_LONG){
             n = Z_LVAL_P(&retval);
@@ -64,6 +65,21 @@ void freeUVSSLResource(void *object TSRMLS_DC) {
     freeUVTcpResource(object);            
 }
 
+PHP_METHOD(UVSSL, setSSLServerNameCallback){
+    zval *sslServerNameCallback;
+    zval *self = getThis();
+    
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &sslServerNameCallback)){
+        return;
+    }
+    
+    if (!zend_is_callable(sslServerNameCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(sslServerNameCallback)) {
+       php_error_docref(NULL TSRMLS_CC, E_WARNING, "param callback is not callable");
+    }
+    
+    zend_update_property(CLASS_ENTRY(UVSSL), self, ZEND_STRL("sslServerNameCallback"), sslServerNameCallback TSRMLS_CC);
+}
+
 PHP_METHOD(UVSSL, __construct){
     long sslMethod = SSL_METHOD_TLSV1_1, nContexts = 1;
     int i;
@@ -77,7 +93,7 @@ PHP_METHOD(UVSSL, __construct){
     }
 
     if (IS_OBJECT != Z_TYPE_P(loop) ||
-        instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
+        !instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
         php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
         return;
     }

@@ -16,6 +16,10 @@ ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, __construct), 0)
     ZEND_ARG_INFO(0, nContexts)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, setSSLServerNameCallback), 0)
+    ZEND_ARG_INFO(0, callback) 
+ZEND_END_ARG_INFO()
+
 static zend_object_value createUVSSLResource(zend_class_entry *class_type TSRMLS_DC);
 
 void freeUVSSLResource(void *object TSRMLS_DC);
@@ -31,9 +35,11 @@ typedef struct uv_ssl_ext_s{
 } uv_ssl_ext_t;
 
 PHP_METHOD(UVSSL, __construct);
+PHP_METHOD(UVSSL, setSSLServerNameCallback);
 
 DECLARE_FUNCTION_ENTRY(UVSSL) = {
     PHP_ME(UVSSL, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+    PHP_ME(UVSSL, setSSLServerNameCallback, NULL, ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 #endif

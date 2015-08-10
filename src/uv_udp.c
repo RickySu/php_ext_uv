@@ -168,7 +168,7 @@ PHP_METHOD(UVUdp, __construct){
     }
                                          
     if (IS_OBJECT != Z_TYPE_P(loop) ||
-        instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
+        !instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
         php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
         return;
     }
