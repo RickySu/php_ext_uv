@@ -2,8 +2,9 @@
 
 CLASS_ENTRY_FUNCTION_D(UVSSL){
     EXTENDS_CLASS_WITH_OBJECT_NEW(UVSSL, createUVSSLResource, UVTcp);
-    OBJECT_HANDLER(UVSSL).clone_obj = NULL;    
+    OBJECT_HANDLER(UVSSL).clone_obj = NULL;
     zend_declare_property_null(CLASS_ENTRY(UVSSL), ZEND_STRL("sslServerNameCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
+    zend_declare_property_null(CLASS_ENTRY(UVSSL), ZEND_STRL("sslHandshakeCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV2);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV3);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV23);
@@ -41,10 +42,10 @@ static zend_object_value createUVSSLResource(zend_class_entry *ce TSRMLS_DC) {
     zend_object_value retval;
     uv_ssl_ext_t *ssl_resource;
     uv_tcp_ext_t *tcp_resource;
+
     ssl_resource = (uv_ssl_ext_t *) emalloc(sizeof(uv_ssl_ext_t));
     memset(ssl_resource, 0, sizeof(uv_ssl_ext_t));
     tcp_resource = (uv_tcp_ext_t *) ssl_resource;
-    
     zend_object_std_init(&tcp_resource->zo, ce TSRMLS_CC);
     object_properties_init(&tcp_resource->zo, ce);
                             
@@ -61,7 +62,6 @@ static zend_object_value createUVSSLResource(zend_class_entry *ce TSRMLS_DC) {
 void freeUVSSLResource(void *object TSRMLS_DC) {
     uv_ssl_ext_t *resource;
     resource = (uv_ssl_ext_t *) FETCH_RESOURCE(object, uv_tcp_ext_t);
-    printf("aaaa\n");
     freeUVTcpResource(object);            
 }
 
@@ -78,6 +78,94 @@ PHP_METHOD(UVSSL, setSSLServerNameCallback){
     }
     
     zend_update_property(CLASS_ENTRY(UVSSL), self, ZEND_STRL("sslServerNameCallback"), sslServerNameCallback TSRMLS_CC);
+}
+
+PHP_METHOD(UVSSL, setSSLHandshakeCallback){
+    zval *sslHandshakeCallback;
+    zval *self = getThis();
+    
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &sslHandshakeCallback)){
+        return;
+    }
+    
+    if (!zend_is_callable(sslHandshakeCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(sslHandshakeCallback)) {
+       php_error_docref(NULL TSRMLS_CC, E_WARNING, "param callback is not callable");
+    }
+    
+    zend_update_property(CLASS_ENTRY(UVSSL), self, ZEND_STRL("sslLHandshakeCallback"), sslHandshakeCallback TSRMLS_CC);
+}
+
+PHP_METHOD(UVSSL, setPrivateKey){
+    const char *key;
+    int key_len;
+    zval *self = getThis();
+    long n = 0;
+    EVP_PKEY *pkey;
+    BIO *key_bio;
+    int result;
+    uv_tcp_ext_t *tcp_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    uv_ssl_ext_t *resource = (uv_ssl_ext_t *) tcp_resource;
+
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &key, &key_len, &n)){
+        return;
+    }
+
+    if(n<0 || n>=resource->nctx){
+        RETURN_FALSE;
+    }
+    
+    key_bio = BIO_new(BIO_s_mem());
+    if(BIO_write(key_bio, key, key_len) <= 0){
+        RETURN_FALSE;
+    }
+
+    pkey = PEM_read_bio_PrivateKey(key_bio, NULL, NULL, NULL);
+    BIO_free(key_bio);
+                                                        
+    if(pkey == NULL){
+        RETURN_FALSE;
+    }
+    
+    result = SSL_CTX_use_PrivateKey(resource->ctx[n], pkey);
+    EVP_PKEY_free(pkey);
+    RETURN_BOOL(result);
+}
+
+PHP_METHOD(UVSSL, setCert){
+    const char *cert;
+    int cert_len;
+    zval *self = getThis();
+    long n = 0;
+    X509 *pcert;  
+    BIO *cert_bio;
+    int result;
+    uv_tcp_ext_t *tcp_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    uv_ssl_ext_t *resource = (uv_ssl_ext_t *) tcp_resource;
+
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &cert, &cert_len, &n)){
+        return;
+    }
+
+    if(n<0 || n>=resource->nctx){
+        RETURN_FALSE;
+    }
+
+    cert_bio = BIO_new(BIO_s_mem());
+    if(BIO_write(cert_bio, cert, cert_len) <= 0){
+        RETURN_FALSE;
+    }
+    
+    pcert = PEM_read_bio_X509_AUX(cert_bio, NULL, NULL, NULL);
+    BIO_free(cert_bio);
+    result = SSL_CTX_use_certificate(resource->ctx[n], pcert);    
+    X509_free(pcert);
+    RETURN_BOOL(result);
+}
+
+PHP_METHOD(UVSSL, accept){
+    zval *self = getThis();
+    uv_tcp_ext_t *tcp_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    uv_ssl_ext_t *resource = (uv_ssl_ext_t *) tcp_resource;
 }
 
 PHP_METHOD(UVSSL, __construct){
@@ -101,7 +189,7 @@ PHP_METHOD(UVSSL, __construct){
     tcp_resource->object = self;
     zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop TSRMLS_CC);
     uv_tcp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_tcp_t *) resource);
-    
+
     switch(sslMethod){
         case SSL_METHOD_SSLV2:
 #ifdef OPENSSL_NO_SSL2
@@ -129,9 +217,9 @@ PHP_METHOD(UVSSL, __construct){
             resource->ssl_method = TLSv1_1_method();
             break;
     }
-    
     resource->ctx = emalloc(sizeof(SSL_CTX *) * nContexts);
     resource->nctx = nContexts;
+
     for(i = 0; i < nContexts; i++){
         resource->ctx[i] = SSL_CTX_new(resource->ssl_method);
         SSL_CTX_set_session_cache_mode(resource->ctx[i], SSL_SESS_CACHE_BOTH);

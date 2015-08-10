@@ -76,7 +76,7 @@ PHP_METHOD(UVTcp, __construct);
 PHP_METHOD(UVTcp, connect);
 
 DECLARE_FUNCTION_ENTRY(UVTcp) = {
-    PHP_ME(UVTcp, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+    PHP_ME(UVTcp, __construct, ARGINFO(UVTcp, __construct), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
     PHP_ME(UVTcp, getSockname, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVTcp, getSockport, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVTcp, getPeername, NULL, ZEND_ACC_PUBLIC)

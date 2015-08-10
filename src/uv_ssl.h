@@ -10,7 +10,7 @@
 #define SSL_METHOD_TLSV1_1 4
 #define SSL_METHOD_TLSV1_2 5
 
-ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, __construct), 0)
+ZEND_BEGIN_ARG_INFO_EX(ARGINFO(UVSSL, __construct), 0, 0, 1)
     ZEND_ARG_INFO(0, loop)
     ZEND_ARG_INFO(0, sslMethod)
     ZEND_ARG_INFO(0, nContexts)
@@ -18,6 +18,20 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, setSSLServerNameCallback), 0)
     ZEND_ARG_INFO(0, callback) 
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, setSSLHandshakeCallback), 0)
+    ZEND_ARG_INFO(0, callback) 
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(ARGINFO(UVSSL, setCert), 0, 0, 1)
+    ZEND_ARG_INFO(0, cert)
+    ZEND_ARG_INFO(0, n)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(ARGINFO(UVSSL, setPrivateKey), 0, 0, 1)
+    ZEND_ARG_INFO(0, privateKey)
+    ZEND_ARG_INFO(0, n)
 ZEND_END_ARG_INFO()
 
 static zend_object_value createUVSSLResource(zend_class_entry *class_type TSRMLS_DC);
@@ -36,10 +50,18 @@ typedef struct uv_ssl_ext_s{
 
 PHP_METHOD(UVSSL, __construct);
 PHP_METHOD(UVSSL, setSSLServerNameCallback);
+PHP_METHOD(UVSSL, setSSLHandshakeCallback);
+PHP_METHOD(UVSSL, setCert);
+PHP_METHOD(UVSSL, setPrivateKey);
+PHP_METHOD(UVSSL, accept);
 
 DECLARE_FUNCTION_ENTRY(UVSSL) = {
-    PHP_ME(UVSSL, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-    PHP_ME(UVSSL, setSSLServerNameCallback, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(UVSSL, __construct, ARGINFO(UVSSL, __construct), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+    PHP_ME(UVSSL, setSSLServerNameCallback, ARGINFO(UVSSL, setSSLServerNameCallback), ZEND_ACC_PUBLIC)
+    PHP_ME(UVSSL, setSSLHandshakeCallback, ARGINFO(UVSSL, setSSLHandshakeCallback), ZEND_ACC_PUBLIC)
+    PHP_ME(UVSSL, setCert, ARGINFO(UVSSL, setCert), ZEND_ACC_PUBLIC)
+    PHP_ME(UVSSL, setPrivateKey, ARGINFO(UVSSL, setPrivateKey), ZEND_ACC_PUBLIC)
+    PHP_ME(UVSSL, accept, NULL, ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 #endif

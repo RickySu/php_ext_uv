@@ -31,16 +31,17 @@
 #define INIT_CLASS_WITH_OBJECT_NEW(name, create_function) \
     zend_class_entry ce; \
     memcpy(&OBJECT_HANDLER(name), zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
-    INIT_CLASS_ENTRY(ce, #name, FUNCTION_ENTRY(name)); \
-    ce.create_object = create_function
+    INIT_CLASS_ENTRY(ce, #name, FUNCTION_ENTRY(name))
 
 #define REGISTER_CLASS_WITH_OBJECT_NEW(name, create_function) \
     INIT_CLASS_WITH_OBJECT_NEW(name, create_function); \
-    REGISTER_INTERNAL_CLASS(name)
+    REGISTER_INTERNAL_CLASS(name); \
+    CLASS_ENTRY(name)->create_object = create_function
 
 #define EXTENDS_CLASS_WITH_OBJECT_NEW(name, create_function, base) \
     INIT_CLASS_WITH_OBJECT_NEW(name, create_function); \
-    REGISTER_INTERNAL_CLASS_EX(name, base)    
+    REGISTER_INTERNAL_CLASS_EX(name, base); \
+    CLASS_ENTRY(name)->create_object = create_function    
  
 #define REGISTER_CLASS(name) \
     zend_class_entry ce; \
