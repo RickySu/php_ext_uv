@@ -62,6 +62,8 @@ static zend_object_value createUVTcpResource(zend_class_entry *class_type TSRMLS
 void freeUVTcpResource(void *object TSRMLS_DC);
 int tcp_write_raw(uv_stream_t * handle, char *message, int size);
 zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client);
+static void tcp_close_cb(uv_handle_t* handle);
+void tcp_close_socket(uv_tcp_ext_t *handle);
 
 PHP_METHOD(UVTcp, getSockname);
 PHP_METHOD(UVTcp, getSockport);

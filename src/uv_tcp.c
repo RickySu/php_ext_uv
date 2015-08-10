@@ -1,5 +1,13 @@
 #include "uv_tcp.h"
 
+void tcp_close_socket(uv_tcp_ext_t *handle){       
+    if(handle->flag & UV_TCP_CLOSING_START){
+         return;
+    }
+    handle->flag |= UV_TCP_CLOSING_START;
+    uv_close((uv_handle_t *) handle, tcp_close_cb);
+}
+
 static inline void setSelfReference(uv_tcp_ext_t *resource)
 {
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
@@ -72,16 +80,8 @@ static void shutdown_cb(uv_shutdown_t* req, int status) {
     }
 }
 
-static void close_cb(uv_handle_t* handle) {
+static void tcp_close_cb(uv_handle_t* handle) {
     release((uv_tcp_ext_t *) handle);
-}
-
-static inline void tcp_close_socket(uv_tcp_ext_t *handle){
-    if(handle->flag & UV_TCP_CLOSING_START){
-        return;
-    }
-    handle->flag |= UV_TCP_CLOSING_START;
-    uv_close((uv_handle_t *) handle, close_cb);
 }
 
 static void write_cb(uv_write_t *wr, int status){
@@ -94,7 +94,7 @@ static void write_cb(uv_write_t *wr, int status){
 
     write_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("writeCallback"), 0 TSRMLS_CC);
 
-    if(IS_NULL != Z_TYPE_P(write_cb)){
+    if(resource->flag & UV_TCP_WRITE_CALLBACK_ENABLE && IS_NULL != Z_TYPE_P(write_cb)){
         MAKE_STD_ZVAL(params[1]);
         ZVAL_LONG(params[1], status);
         MAKE_STD_ZVAL(params[2]);
@@ -412,9 +412,8 @@ PHP_METHOD(UVTcp, write){
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &buf, &buf_len)) {
         return;
     }
-    
+    resource->flag |= UV_TCP_WRITE_CALLBACK_ENABLE;
     ret = tcp_write_raw((uv_stream_t *) &resource->uv_tcp, buf, buf_len);
-    resource->flag |= UV_TCP_HANDLE_START;
     RETURN_LONG(ret);
 }
 

@@ -34,6 +34,10 @@ ZEND_BEGIN_ARG_INFO_EX(ARGINFO(UVSSL, setPrivateKey), 0, 0, 1)
     ZEND_ARG_INFO(0, n)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, write), 0)
+    ZEND_ARG_INFO(0, message)
+ZEND_END_ARG_INFO()
+
 typedef struct uv_ssl_ext_s{
     uv_tcp_ext_t uv_tcp_ext;
     const SSL_METHOD *ssl_method;
@@ -54,6 +58,7 @@ PHP_METHOD(UVSSL, setSSLHandshakeCallback);
 PHP_METHOD(UVSSL, setCert);
 PHP_METHOD(UVSSL, setPrivateKey);
 PHP_METHOD(UVSSL, accept);
+PHP_METHOD(UVSSL, write);
 
 DECLARE_FUNCTION_ENTRY(UVSSL) = {
     PHP_ME(UVSSL, __construct, ARGINFO(UVSSL, __construct), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -62,6 +67,7 @@ DECLARE_FUNCTION_ENTRY(UVSSL) = {
     PHP_ME(UVSSL, setCert, ARGINFO(UVSSL, setCert), ZEND_ACC_PUBLIC)
     PHP_ME(UVSSL, setPrivateKey, ARGINFO(UVSSL, setPrivateKey), ZEND_ACC_PUBLIC)
     PHP_ME(UVSSL, accept, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(UVSSL, write, ARGINFO(UVSSL, write), ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 #endif
