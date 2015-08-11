@@ -8,7 +8,7 @@ void tcp_close_socket(uv_tcp_ext_t *handle){
     uv_close((uv_handle_t *) handle, tcp_close_cb);
 }
 
-static inline void setSelfReference(uv_tcp_ext_t *resource)
+void setSelfReference(uv_tcp_ext_t *resource)
 {
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         return;
