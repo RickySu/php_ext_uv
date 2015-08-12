@@ -183,7 +183,7 @@ void freeUVSSLResource(void *object TSRMLS_DC) {
         efree(resource->ctx);
         resource->ctx = NULL;
     }
-    freeUVTcpResource(object);
+    freeUVTcpResource(object TSRMLS_CC);
 }
 
 PHP_METHOD(UVSSL, setSSLServerNameCallback){
