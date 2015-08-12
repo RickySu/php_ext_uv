@@ -290,7 +290,7 @@ PHP_METHOD(UVTcp, accept){
     uv_tcp_ext_t *client_resource;
     
     object_init_ex(return_value, CLASS_ENTRY(UVTcp));
-    if(!make_accepted_uv_tcp_object(resource, return_value)){
+    if(!make_accepted_uv_tcp_object(resource, return_value TSRMLS_CC)){
         RETURN_FALSE;
     }
     
@@ -489,7 +489,7 @@ PHP_METHOD(UVTcp, connect){
     RETURN_LONG(ret);
 }
 
-zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client){
+zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client TSRMLS_DC){
     uv_tcp_ext_t *client_resource;
     client_resource = FETCH_OBJECT_RESOURCE(client, uv_tcp_ext_t);
     zval *loop = zend_read_property(CLASS_ENTRY(UVTcp), server_resource->object, ZEND_STRL("loop"), 0 TSRMLS_CC);

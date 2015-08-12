@@ -288,7 +288,7 @@ PHP_METHOD(UVSSL, accept){
     uv_ssl_ext_t *client_resource;
     
     object_init_ex(return_value, CLASS_ENTRY(UVSSL));
-    if(!make_accepted_uv_tcp_object((uv_tcp_ext_t *) server_resource, return_value)){
+    if(!make_accepted_uv_tcp_object((uv_tcp_ext_t *) server_resource, return_value TSRMLS_CC)){
         RETURN_FALSE;
     }
     
