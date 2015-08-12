@@ -17,7 +17,7 @@ static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
     ZVAL_LONG(params[1], signo);
     signal_cb = zend_read_property(CLASS_ENTRY(UVSignal), signal_handle->object, ZEND_STRL("callback"), 0 TSRMLS_CC);
     call_user_function(CG(function_table), NULL, signal_cb, &retval, 2, params TSRMLS_CC);
-    zval_ptr_dtor(&params[1]);    
+    zval_dtor(params[1]);    
     zval_dtor(&retval);
 }
 
