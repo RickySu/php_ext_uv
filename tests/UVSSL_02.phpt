@@ -2,18 +2,18 @@
 Check for UVSSL Connect
 --FILE--
 <?php
+$html = '';
 $host = gethostbyname('github.com');
 $loop = new UVLoop();
 $ssl = new UVSSL($loop);
-$ssl->html = '';
-$ssl->connect($host, 443, function($ssl){
-    $ssl->setSSLHandshakeCallback(function($ssl){
+$ssl->connect($host, 443, function($ssl) use(&$html){
+    $ssl->setSSLHandshakeCallback(function($ssl) use(&$html){
         echo "handshake: ok\n";
-        $ssl->setCallback(function($ssl, $recv){
-            $ssl->html.=$recv;
-        }, function(){}, function($ssl){            
-            if(($pos = strpos($ssl->html, "\r\n\r\n")) !== false){
-               $header = substr($ssl->html, 0, $pos);
+        $ssl->setCallback(function($ssl, $recv) use(&$html){
+            $html.=$recv;
+        }, function(){}, function($ssl) use(&$html){
+            if(($pos = strpos($html, "\r\n\r\n")) !== false){
+               $header = substr($html, 0, $pos);
                preg_match('/Status:\s(\d+)/i', $header, $match);
                echo "http status: {$match[1]}\n";
             }
