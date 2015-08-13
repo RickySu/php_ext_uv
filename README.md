@@ -17,9 +17,7 @@ with high performance asynchronous I/O.
 
 * SSL support
 
-* Http 1.1 keep alive support
-
-* High performance web server with [R3](https://github.com/c9s/r3) routing
+* TLS [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) support
 
 ## Build Requirement
 
