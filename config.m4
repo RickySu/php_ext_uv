@@ -1,6 +1,5 @@
 THIRDPARTY_BUILD_DIR="$srcdir/thirdparty/build"
 
-PHP_ADD_INCLUDE("$srcdir/thirdparty/r3/include")
 PHP_ADD_INCLUDE("$srcdir/thirdparty/libuv/include")
 
 PHP_ARG_ENABLE(php_ext_uv, whether to enable php_ext_uv support,
@@ -54,7 +53,7 @@ fi
 
 PHP_ADD_MAKEFILE_FRAGMENT([Makefile.thirdparty])
 
-PHP_EXT_UV_SHARED_DEPENDENCIES="$THIRDPARTY_BUILD_DIR/lib/libr3.a $THIRDPARTY_BUILD_DIR/lib/libuv.a"
-EXTRA_LDFLAGS="$EXTRA_LDFLAGS $THIRDPARTY_BUILD_DIR/lib/libr3.a $THIRDPARTY_BUILD_DIR/lib/libuv.a"
+PHP_EXT_UV_SHARED_DEPENDENCIES="$THIRDPARTY_BUILD_DIR/lib/libuv.a"
+EXTRA_LDFLAGS="$EXTRA_LDFLAGS $THIRDPARTY_BUILD_DIR/lib/libuv.a"
 
 PHP_SUBST(PHP_EXT_UV_SHARED_DEPENDENCIES)
