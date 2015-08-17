@@ -56,6 +56,10 @@
 #define ARGINFO(classname, method) \
     arginfo_##classname##_##method
 
+#ifndef offsetof
+#define offsetof(s,memb) ((size_t)((char *)&((s *)0)->memb-(char *)0))
+#endif
+
 #define FETCH_RESOURCE(pointer, type) (type *) (pointer - offsetof(type, zo))
     
 #define FETCH_OBJECT_RESOURCE(object, type) FETCH_RESOURCE(zend_object_store_get_object(object TSRMLS_CC), type)
