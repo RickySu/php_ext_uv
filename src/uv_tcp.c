@@ -32,7 +32,7 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
 static void release(uv_tcp_ext_t *resource){
 
     if(resource->flag & UV_TCP_READ_START){
-        resource->flag &= UV_TCP_READ_START;
+        resource->flag &= ~UV_TCP_READ_START;
         uv_read_stop((uv_stream_t *) &resource->uv_tcp);
     }
     
@@ -43,7 +43,7 @@ static void release(uv_tcp_ext_t *resource){
 
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_TCP_HANDLE_INTERNAL_REF;
-        Z_DELREF_P(resource->object);
+        Z_DELREF_AND_DTOR_P(resource->object);
     }
 
     if(resource->sockPort != 0){

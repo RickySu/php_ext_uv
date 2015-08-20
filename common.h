@@ -67,3 +67,13 @@
 #define REGISTER_CLASS_CONSTANT_LONG(class, name) \
     zend_declare_class_constant_long(CLASS_ENTRY(class), ZEND_STRL(#name), name TSRMLS_CC)
 #endif
+
+#define Z_DELREF_AND_DTOR_P(o) \
+    do{ \
+        if(Z_REFCOUNT_P(o) == 1){ \
+            zval_dtor(o); \
+        } \
+        else{ \
+            Z_DELREF_P(o); \
+        }\
+    }while(0)
