@@ -56,9 +56,9 @@ static void send_cb(uv_udp_send_t* sr, int status) {
     
         call_user_function(CG(function_table), NULL, send_cb, &retval, 4, params TSRMLS_CC);
     
-        zval_dtor(params[1]);
-        zval_dtor(params[2]);
-        zval_dtor(params[3]);
+        zval_ptr_dtor(&params[1]);
+        zval_ptr_dtor(&params[2]);
+        zval_ptr_dtor(&params[3]);
         zval_dtor(&retval);
     }
     efree(req->buf.base);
@@ -91,10 +91,10 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
     
             call_user_function(CG(function_table), NULL, recvCallback, &retval, 5, params TSRMLS_CC);
     
-            zval_dtor(params[1]);
-            zval_dtor(params[2]);
-            zval_dtor(params[3]);
-            zval_dtor(params[4]);
+            zval_ptr_dtor(&params[1]);
+            zval_ptr_dtor(&params[2]);
+            zval_ptr_dtor(&params[3]);
+            zval_ptr_dtor(&params[4]);
             zval_dtor(&retval);
         }    
     }
@@ -107,8 +107,8 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
     
             call_user_function(CG(function_table), NULL, errorCallback, &retval, 3, params TSRMLS_CC);
     
-            zval_dtor(params[1]);
-            zval_dtor(params[2]);
+            zval_ptr_dtor(&params[1]);
+            zval_ptr_dtor(&params[2]);
             zval_dtor(&retval);
         }
     }

@@ -67,7 +67,7 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
                     MAKE_STD_ZVAL(params[1]);
                     ZVAL_STRINGL(params[1], read_buf, read_buf_index, 1);
                     call_user_function(CG(function_table), NULL, readCallback, &retval, 2, params TSRMLS_CC);
-                    zval_dtor(params[1]);
+                    zval_ptr_dtor(&params[1]);
                     zval_dtor(&retval);
                 }
                 read_buf_index = 0;
@@ -83,7 +83,7 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             MAKE_STD_ZVAL(params[1]);
             ZVAL_LONG(params[1], nread);
             call_user_function(CG(function_table), NULL, errorCallback, &retval, 2, params TSRMLS_CC);
-            zval_dtor(params[1]);
+            zval_ptr_dtor(&params[1]);
             zval_dtor(&retval);
         }
         tcp_close_socket((uv_tcp_ext_t *) resource);
@@ -111,7 +111,7 @@ static int sni_cb(SSL *s, int *ad, void *arg) {
                 SSL_set_SSL_CTX(s, resource->ctx[n]);
             }
         }
-        zval_dtor(params[0]);
+        zval_ptr_dtor(&params[0]);
         zval_dtor(&retval);
     }
     return SSL_TLSEXT_ERR_OK;
@@ -142,7 +142,7 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     SSL_connect(resource->ssl);
     write_bio_to_socket(resource);
     call_user_function(CG(function_table), NULL, callback, &retval, 2, params TSRMLS_CC);
-    zval_dtor(params[1]);
+    zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
 }
 
@@ -294,7 +294,7 @@ PHP_METHOD(UVSSL, accept){
     
     client_resource = (uv_ssl_ext_t *) FETCH_OBJECT_RESOURCE(return_value, uv_tcp_ext_t);
     if(uv_read_start((uv_stream_t *) client_resource, alloc_cb, (uv_read_cb) read_cb)){
-        zval_ptr_dtor(&return_value);
+        zval_dtor(return_value);
         RETURN_FALSE;
     }
     client_resource->ssl = SSL_new(server_resource->ctx[0]);

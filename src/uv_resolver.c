@@ -22,8 +22,8 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct 
         uv_freeaddrinfo(res);
     }
     call_user_function(CG(function_table), NULL, info->callback, &retval, 2, params TSRMLS_CC);
-    zval_dtor(params[0]);
-    zval_dtor(params[1]);
+    zval_ptr_dtor(&params[0]);
+    zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
     RELEASE_INFO(info);
 }
@@ -45,7 +45,7 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
     }
     call_user_function(CG(function_table), NULL, info->callback, &retval, 3, params TSRMLS_CC);
     for(i=0;i<=2;i++){
-        zval_dtor(params[i]);
+        zval_ptr_dtor(&params[i]);
     }
     zval_dtor(&retval);
     RELEASE_INFO(info);

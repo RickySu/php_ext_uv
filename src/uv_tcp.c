@@ -43,7 +43,7 @@ static void release(uv_tcp_ext_t *resource){
 
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_TCP_HANDLE_INTERNAL_REF;
-        Z_DELREF_AND_DTOR_P(resource->object);
+        zval_ptr_dtor(&resource->object);
     }
 
     if(resource->sockPort != 0){
@@ -75,7 +75,7 @@ static void shutdown_cb(uv_shutdown_t* req, int status) {
     
         call_user_function(CG(function_table), NULL, shutdown_cb, &retval, 2, params TSRMLS_CC);
     
-        zval_dtor(params[1]);
+        zval_ptr_dtor(&params[1]);
         zval_dtor(&retval);
     }
 }
@@ -102,8 +102,8 @@ static void write_cb(uv_write_t *wr, int status){
     
         call_user_function(CG(function_table), NULL, write_cb, &retval, 3, params TSRMLS_CC);
     
-        zval_dtor(params[1]);
-        zval_dtor(params[2]);
+        zval_ptr_dtor(&params[1]);
+        zval_ptr_dtor(&params[2]);
         zval_dtor(&retval);
     }
     efree(req->buf.base);
@@ -130,7 +130,7 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             MAKE_STD_ZVAL(params[1]);
             ZVAL_STRINGL(params[1], buf->base, nread, 1);        
             call_user_function(CG(function_table), NULL, read_cb, &retval, 2, params TSRMLS_CC);
-            zval_dtor(params[1]);
+            zval_ptr_dtor(&params[1]);
         }
     }
     else{    
@@ -138,7 +138,7 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             MAKE_STD_ZVAL(params[1]);
             ZVAL_LONG(params[1], nread);        
             call_user_function(CG(function_table), NULL, error_cb, &retval, 2, params TSRMLS_CC);
-            zval_dtor(params[1]);
+            zval_ptr_dtor(&params[1]);
         }
         tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
     }
@@ -163,7 +163,7 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
     
     call_user_function(CG(function_table), NULL, connect_cb, &retval, 2, params TSRMLS_CC);
-    zval_dtor(params[1]);
+    zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
 }
 
@@ -177,7 +177,7 @@ static void connection_cb(uv_tcp_ext_t *resource, int status) {
     TSRMLS_FETCH();
     connect_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("connectCallback"), 0 TSRMLS_CC);
     call_user_function(CG(function_table), NULL, connect_cb, &retval, 2, params TSRMLS_CC);
-    zval_dtor(params[1]);
+    zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
 }
 
