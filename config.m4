@@ -22,6 +22,7 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
       src/uv_udp.c
       src/uv_tcp.c
       src/uv_resolver.c
+      src/uv_idle.c
   "
 
   dnl {{{ --with-event-openssl
