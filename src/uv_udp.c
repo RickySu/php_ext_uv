@@ -159,7 +159,7 @@ static inline void resolveSocket(uv_udp_ext_t *resource){
 }
 
 PHP_METHOD(UVUdp, __construct){
-    zval *loop;
+    zval *loop = NULL;
     zval *self = getThis();
     uv_udp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_udp_ext_t);
                     

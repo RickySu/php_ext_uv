@@ -49,7 +49,7 @@ void freeUVTimerResource(void *object TSRMLS_DC) {
 }
 
 PHP_METHOD(UVTimer, __construct){
-    zval *loop;
+    zval *loop = NULL;
     zval *self = getThis();
     uv_timer_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_timer_ext_t);
         
