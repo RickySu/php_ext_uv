@@ -308,24 +308,27 @@ PHP_METHOD(UVSSL, accept){
 PHP_METHOD(UVSSL, __construct){
     long sslMethod = SSL_METHOD_TLSV1_1, nContexts = 1;
     int i;
-    zval *loop;
+    zval *loop = NULL;
     zval *self = getThis();
     uv_tcp_ext_t *tcp_resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
     uv_ssl_ext_t *resource = (uv_ssl_ext_t *) tcp_resource;
    
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|ll", &loop, &sslMethod, &nContexts)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|zll", &loop, &sslMethod, &nContexts)) {
         return;
     }
 
-    if (IS_OBJECT != Z_TYPE_P(loop) ||
-        !instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
-        return;
-    }
-    
     tcp_resource->object = self;
-    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop TSRMLS_CC);
-    uv_tcp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_tcp_t *) resource);
+
+    if(NULL == loop || ZVAL_IS_NULL(loop)){
+        uv_tcp_init(uv_default_loop(), (uv_tcp_t *) resource);
+    }
+    else{
+        if(!check_zval_type(CLASS_ENTRY(UVSSL), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC)){
+            return;
+        }
+        zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop TSRMLS_CC);
+        uv_tcp_init(FETCH_UV_LOOP(), (uv_tcp_t *) resource);
+    }
 
     switch(sslMethod){
         case SSL_METHOD_SSLV2:

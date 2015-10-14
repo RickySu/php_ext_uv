@@ -1,5 +1,6 @@
 #ifndef UTIL_H
 #define	UTIL_H
+#include "../php_ext_uv.h"
 
 #define TIMEVAL_SET(tv, t) \
     do {                                             \
@@ -9,14 +10,14 @@
 
 #define TIMEVAL_TO_DOUBLE(tv) (tv.tv_sec + tv.tv_usec * 1e-6)
 
-static inline char *sock_addr(struct sockaddr *addr) {
+static zend_always_inline char *sock_addr(struct sockaddr *addr) {
     struct sockaddr_in addr_in = *(struct sockaddr_in *) addr;
     char *ip = emalloc(20);
     uv_ip4_name(&addr_in, ip, 20);
     return ip;
 }
     
-static inline int sock_port(struct sockaddr *addr) {
+static zend_always_inline int sock_port(struct sockaddr *addr) {
     struct sockaddr_in addr_in = *(struct sockaddr_in *) addr;
     return ntohs(addr_in.sin_port);
 }
@@ -29,4 +30,5 @@ static inline int sock_port(struct sockaddr *addr) {
     c_str = emalloc(str_len + 1); \
     COPY_C_STR(c_str, str, str_len)
 
+int check_zval_type(zend_class_entry *call_ce, const char * function_name, uint function_name_len, zend_class_entry *instance_ce, zval *val TSRMLS_DC);
 #endif	/* UTIL_H */

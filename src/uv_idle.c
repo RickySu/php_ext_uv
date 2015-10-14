@@ -50,22 +50,27 @@ void freeUVIdleResource(void *object TSRMLS_DC) {
 }
 
 PHP_METHOD(UVIdle, __construct){
-    zval *loop;
+    zval *loop = NULL;
     zval *self = getThis();
+    zend_function *fptr;
     uv_idle_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_idle_ext_t);
                     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &loop)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &loop)) {
         return;
     }
-                                         
-    if (IS_OBJECT != Z_TYPE_P(loop) ||
-        !instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
+
+    if(NULL == loop || ZVAL_IS_NULL(loop)){
+        uv_idle_init(uv_default_loop(), (uv_idle_t *) resource);
         return;
     }
+    
+    if(!check_zval_type(CLASS_ENTRY(UVIdle), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC))
+    {
+        return;
+    }
+
     zend_update_property(CLASS_ENTRY(UVIdle), self, ZEND_STRL("loop"), loop TSRMLS_CC);
-    uv_idle_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_idle_t *) resource);
-                                                                                      
+    uv_idle_init(FETCH_UV_LOOP(), (uv_idle_t *) resource);
 }
 
 PHP_METHOD(UVIdle, start){

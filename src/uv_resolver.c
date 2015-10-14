@@ -52,18 +52,21 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
 }
 
 PHP_METHOD(UVResolver, __construct){
-    zval *loop;
+    zval *loop = NULL;
     zval *self = getThis();
                     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &loop)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &loop)) {
         return;
     }
-                                         
-    if (IS_OBJECT != Z_TYPE_P(loop) ||
-        !instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
+    
+    if(NULL == loop || ZVAL_IS_NULL(loop)){
         return;
     }
+
+    if(!check_zval_type(CLASS_ENTRY(UVResolver), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC)){
+        return;
+    }
+    
     zend_update_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), loop TSRMLS_CC);                                                                                      
 }
 
@@ -95,7 +98,7 @@ PHP_METHOD(UVResolver, getnameinfo){
     }
     INIT_INFO(info, uv_getnameinfo_ext_t, self, nameinfoCallback);
 
-    if((ret = uv_getnameinfo((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_getnameinfo_t *) info, (uv_getnameinfo_cb) on_nameinfo_resolved, (const struct sockaddr*) &addr4, 0)) != 0) {
+    if((ret = uv_getnameinfo(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_getnameinfo_t *) info, (uv_getnameinfo_cb) on_nameinfo_resolved, (const struct sockaddr*) &addr4, 0)) != 0) {
         RELEASE_INFO(info);
     }
     
@@ -129,7 +132,7 @@ PHP_METHOD(UVResolver, getaddrinfo){
     MAKE_C_STR(c_node, node, node_len);
     MAKE_C_STR(c_service, service, service_len);
         
-    if((ret = uv_getaddrinfo((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_getaddrinfo_t *) info, (uv_getaddrinfo_cb) on_addrinfo_resolved, c_node, c_service, NULL)) != 0) {
+    if((ret = uv_getaddrinfo(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_getaddrinfo_t *) info, (uv_getaddrinfo_cb) on_addrinfo_resolved, c_node, c_service, NULL)) != 0) {
         RELEASE_INFO(info);
     }
     

@@ -26,7 +26,8 @@ PHP_METHOD(UVLoop, now);
 PHP_METHOD(UVLoop, backendFd);
 PHP_METHOD(UVLoop, backendTimeout);
 
-DECLARE_FUNCTION_ENTRY(UVLoop) = {    
+DECLARE_FUNCTION_ENTRY(UVLoop) = {
+    PHP_ME(UVLoop, defaultLoop, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(UVLoop, run, ARGINFO(UVLoop, run), ZEND_ACC_PUBLIC)
     PHP_ME(UVLoop, stop, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVLoop, alive, NULL, ZEND_ACC_PUBLIC)

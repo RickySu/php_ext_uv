@@ -53,21 +53,25 @@ void freeUVSignalResource(void *object TSRMLS_DC) {
 }
 
 PHP_METHOD(UVSignal, __construct){
-    zval *loop;
+    zval *loop = NULL;
     zval *self = getThis();
     uv_signal_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_signal_ext_t);
                     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &loop)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &loop)) {
         return;
     }
-                                         
-    if (IS_OBJECT != Z_TYPE_P(loop) ||
-        !instanceof_function(Z_OBJCE_P(loop), CLASS_ENTRY(UVLoop) TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "$loop must be an instanceof UVLoop.");
+
+    if(NULL == loop || ZVAL_IS_NULL(loop)){
+        uv_signal_init(uv_default_loop(), (uv_signal_t *) resource);
         return;
     }
+    
+    if(!check_zval_type(CLASS_ENTRY(UVSignal), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC)){
+        return;
+    }
+    
     zend_update_property(CLASS_ENTRY(UVSignal), self, ZEND_STRL("loop"), loop TSRMLS_CC);
-    uv_signal_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_signal_t *) resource);
+    uv_signal_init(FETCH_UV_LOOP(), (uv_signal_t *) resource);
                                                                                       
 }
 
