@@ -498,7 +498,7 @@ zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *clien
     client_resource = FETCH_OBJECT_RESOURCE(client, uv_tcp_ext_t);
     zval *loop = zend_read_property(CLASS_ENTRY(UVTcp), server_resource->object, ZEND_STRL("loop"), 0 TSRMLS_CC);
     zend_update_property(CLASS_ENTRY(UVTcp), client, ZEND_STRL("loop"), loop TSRMLS_CC);
-    uv_tcp_init((uv_loop_t *) FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t), (uv_tcp_t *) client_resource);    
+    uv_tcp_init(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_tcp_t *) client_resource);    
     
     if(uv_accept((uv_stream_t *) &server_resource->uv_tcp, (uv_stream_t *) &client_resource->uv_tcp)) {
         zval_dtor(client);
