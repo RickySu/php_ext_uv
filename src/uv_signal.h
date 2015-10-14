@@ -19,10 +19,10 @@ typedef struct uv_signal_ext_s{
     zend_object zo;    
 } uv_signal_ext_t;
 
-static zend_object_value createUVSignalResource(zend_class_entry *class_type TSRMLS_DC);
+static zend_object_value createUVSignalResource(zend_class_entry *class_type);
 static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo);
 
-void freeUVSignalResource(void *object TSRMLS_DC);
+void freeUVSignalResource(void *object);
 
 PHP_METHOD(UVSignal, __construct);
 PHP_METHOD(UVSignal, start);

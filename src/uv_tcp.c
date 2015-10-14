@@ -20,12 +20,12 @@ void setSelfReference(uv_tcp_ext_t *resource)
 CLASS_ENTRY_FUNCTION_D(UVTcp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTcp, createUVTcpResource);
     OBJECT_HANDLER(UVTcp).clone_obj = NULL;
-    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("readCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("writeCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("errorCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("connectCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("shutdownCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
+    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("readCallback"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("writeCallback"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("errorCallback"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("connectCallback"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("shutdownCallback"), ZEND_ACC_PRIVATE);
 }
 
 
@@ -65,15 +65,14 @@ static void shutdown_cb(uv_shutdown_t* req, int status) {
     zval retval;
     zval *shutdown_cb;
     zval *params[] = {resource->object, NULL};
-    TSRMLS_FETCH();
 
-    shutdown_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("shutdownCallback"), 0 TSRMLS_CC);
+    shutdown_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("shutdownCallback"), 0);
 
     if(IS_NULL != Z_TYPE_P(shutdown_cb)){
         MAKE_STD_ZVAL(params[1]);
         ZVAL_LONG(params[1], status);
     
-        call_user_function(CG(function_table), NULL, shutdown_cb, &retval, 2, params TSRMLS_CC);
+        call_user_function(CG(function_table), NULL, shutdown_cb, &retval, 2, params);
     
         zval_ptr_dtor(&params[1]);
         zval_dtor(&retval);
@@ -90,9 +89,8 @@ static void write_cb(uv_write_t *wr, int status){
     write_req_t *req = (write_req_t *) wr;
     uv_tcp_ext_t *resource = (uv_tcp_ext_t *) req->uv_write.handle;
     zval *params[] = {resource->object, NULL, NULL};
-    TSRMLS_FETCH();
 
-    write_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("writeCallback"), 0 TSRMLS_CC);
+    write_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("writeCallback"), 0);
 
     if(resource->flag & UV_TCP_WRITE_CALLBACK_ENABLE && IS_NULL != Z_TYPE_P(write_cb)){
         MAKE_STD_ZVAL(params[1]);
@@ -100,7 +98,7 @@ static void write_cb(uv_write_t *wr, int status){
         MAKE_STD_ZVAL(params[2]);
         ZVAL_LONG(params[2], req->buf.len);
     
-        call_user_function(CG(function_table), NULL, write_cb, &retval, 3, params TSRMLS_CC);
+        call_user_function(CG(function_table), NULL, write_cb, &retval, 3, params);
     
         zval_ptr_dtor(&params[1]);
         zval_ptr_dtor(&params[2]);
@@ -119,17 +117,16 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
     zval retval;
     zval *read_cb, *error_cb;
     zval *params[] = {resource->object, NULL, NULL, NULL};
-    TSRMLS_FETCH();
     
-    read_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("readCallback"), 0 TSRMLS_CC);
-    error_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("errorCallback"), 0 TSRMLS_CC);
+    read_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("readCallback"), 0);
+    error_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("errorCallback"), 0);
     
     
     if(nread > 0){
         if(IS_NULL != Z_TYPE_P(read_cb)){
             MAKE_STD_ZVAL(params[1]);
             ZVAL_STRINGL(params[1], buf->base, nread, 1);        
-            call_user_function(CG(function_table), NULL, read_cb, &retval, 2, params TSRMLS_CC);
+            call_user_function(CG(function_table), NULL, read_cb, &retval, 2, params);
             zval_ptr_dtor(&params[1]);
         }
     }
@@ -137,7 +134,7 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
         if(IS_NULL != Z_TYPE_P(error_cb)){
             MAKE_STD_ZVAL(params[1]);
             ZVAL_LONG(params[1], nread);        
-            call_user_function(CG(function_table), NULL, error_cb, &retval, 2, params TSRMLS_CC);
+            call_user_function(CG(function_table), NULL, error_cb, &retval, 2, params);
             zval_ptr_dtor(&params[1]);
         }
         tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
@@ -154,15 +151,14 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     ZVAL_NULL(&retval);
     MAKE_STD_ZVAL(params[1]);
     ZVAL_LONG(params[1], status);
-    TSRMLS_FETCH();
-    connect_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("connectCallback"), 0 TSRMLS_CC);
+    connect_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("connectCallback"), 0);
 
     if(uv_read_start((uv_stream_t *) resource, alloc_cb, (uv_read_cb) read_cb)){
         return;
     }
     resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
     
-    call_user_function(CG(function_table), NULL, connect_cb, &retval, 2, params TSRMLS_CC);
+    call_user_function(CG(function_table), NULL, connect_cb, &retval, 2, params);
     zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
 }
@@ -174,40 +170,39 @@ static void connection_cb(uv_tcp_ext_t *resource, int status) {
     ZVAL_NULL(&retval);
     MAKE_STD_ZVAL(params[1]);
     ZVAL_LONG(params[1], status);
-    TSRMLS_FETCH();
-    connect_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("connectCallback"), 0 TSRMLS_CC);
-    call_user_function(CG(function_table), NULL, connect_cb, &retval, 2, params TSRMLS_CC);
+    connect_cb = zend_read_property(CLASS_ENTRY(UVTcp), resource->object, ZEND_STRL("connectCallback"), 0);
+    call_user_function(CG(function_table), NULL, connect_cb, &retval, 2, params);
     zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
 }
 
 
-static zend_object_value createUVTcpResource(zend_class_entry *ce TSRMLS_DC) {
+static zend_object_value createUVTcpResource(zend_class_entry *ce) {
     zend_object_value retval;
     uv_tcp_ext_t *resource;
     resource = (uv_tcp_ext_t *) emalloc(sizeof(uv_tcp_ext_t));
     memset(resource, 0, sizeof(uv_tcp_ext_t));
 
-    zend_object_std_init(&resource->zo, ce TSRMLS_CC);
+    zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
     
     retval.handle = zend_objects_store_put(
         &resource->zo,
         (zend_objects_store_dtor_t) zend_objects_destroy_object,
         freeUVTcpResource,
-        NULL TSRMLS_CC);
+        NULL);
 
     retval.handlers = &OBJECT_HANDLER(UVTcp);
     return retval;
 }
 
-void freeUVTcpResource(void *object TSRMLS_DC) {
+void freeUVTcpResource(void *object) {
     uv_tcp_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_tcp_ext_t);
     
     release(resource);
     
-    zend_object_std_dtor(&resource->zo TSRMLS_CC);
+    zend_object_std_dtor(&resource->zo);
     efree(resource);
 }
 
@@ -290,7 +285,7 @@ PHP_METHOD(UVTcp, accept){
     uv_tcp_ext_t *client_resource;
     
     object_init_ex(return_value, CLASS_ENTRY(UVTcp));
-    if(!make_accepted_uv_tcp_object(resource, return_value TSRMLS_CC)){
+    if(!make_accepted_uv_tcp_object(resource, return_value)){
         RETURN_FALSE;
     }
     
@@ -312,7 +307,7 @@ PHP_METHOD(UVTcp, listen){
     
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz", &host, &host_len, &port, &onConnectCallback)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "slz", &host, &host_len, &port, &onConnectCallback)) {
         return;
     }
     
@@ -334,11 +329,11 @@ PHP_METHOD(UVTcp, listen){
         RETURN_LONG(ret);
     }
     
-    if (!zend_is_callable(onConnectCallback, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onConnectCallback is not callable");
+    if (!zend_is_callable(onConnectCallback, 0, NULL)) {
+        php_error_docref(NULL, E_WARNING, "param onConnectCallback is not callable");
     }    
     
-    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("connectCallback"), onConnectCallback TSRMLS_CC);
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("connectCallback"), onConnectCallback);
     setSelfReference(resource);
     resource->flag |= UV_TCP_HANDLE_START;    
     RETURN_LONG(ret);
@@ -350,25 +345,25 @@ PHP_METHOD(UVTcp, setCallback){
     zval *self = getThis();
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zzz", &onReadCallback, &onWriteCallback, &onErrorCallback)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "zzz", &onReadCallback, &onWriteCallback, &onErrorCallback)) {
         return;
     }
     
-    if (!zend_is_callable(onReadCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(onReadCallback)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onReadCallback is not callable");
+    if (!zend_is_callable(onReadCallback, 0, NULL) && IS_NULL != Z_TYPE_P(onReadCallback)) {
+        php_error_docref(NULL, E_WARNING, "param onReadCallback is not callable");
     }
     
-    if (!zend_is_callable(onWriteCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(onWriteCallback)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onWriteCallback is not callable");
+    if (!zend_is_callable(onWriteCallback, 0, NULL) && IS_NULL != Z_TYPE_P(onWriteCallback)) {
+        php_error_docref(NULL, E_WARNING, "param onWriteCallback is not callable");
     }    
     
-    if (!zend_is_callable(onErrorCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(onErrorCallback)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onErrorCallback is not callable");
+    if (!zend_is_callable(onErrorCallback, 0, NULL) && IS_NULL != Z_TYPE_P(onErrorCallback)) {
+        php_error_docref(NULL, E_WARNING, "param onErrorCallback is not callable");
     }
     
-    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("readCallback"), onReadCallback TSRMLS_CC);
-    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("writeCallback"), onWriteCallback TSRMLS_CC);
-    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("errorCallback"), onErrorCallback TSRMLS_CC);
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("readCallback"), onReadCallback);
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("writeCallback"), onWriteCallback);
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("errorCallback"), onErrorCallback);
     setSelfReference(resource);
 
      RETURN_LONG(ret);
@@ -387,7 +382,7 @@ PHP_METHOD(UVTcp, __construct){
     zval *self = getThis();
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
    
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &loop)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &loop)) {
         return;
     }
     
@@ -398,11 +393,11 @@ PHP_METHOD(UVTcp, __construct){
         return;
     }
     
-    if(!check_zval_type(CLASS_ENTRY(UVTcp), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC)){
+    if(!check_zval_type(CLASS_ENTRY(UVTcp), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop)){
         return;
     }
     
-    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop TSRMLS_CC);
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop);
     uv_tcp_init(FETCH_UV_LOOP(), (uv_tcp_t *) resource);
 }
 
@@ -413,7 +408,7 @@ PHP_METHOD(UVTcp, write){
     int buf_len;
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &buf, &buf_len)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &buf, &buf_len)) {
         return;
     }
     resource->flag |= UV_TCP_WRITE_CALLBACK_ENABLE;
@@ -438,16 +433,16 @@ PHP_METHOD(UVTcp, shutdown){
     int buf_len;
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &onShutdownCallback)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &onShutdownCallback)) {
         return;
     }
     
-    if (!zend_is_callable(onShutdownCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(onShutdownCallback)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onShutdownCallback is not callable");
+    if (!zend_is_callable(onShutdownCallback, 0, NULL) && IS_NULL != Z_TYPE_P(onShutdownCallback)) {
+        php_error_docref(NULL, E_WARNING, "param onShutdownCallback is not callable");
     }
     
     if((ret = uv_shutdown(&resource->shutdown_req, (uv_stream_t *) &resource->uv_tcp, shutdown_cb)) == 0){
-        zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("shutdownCallback"), onShutdownCallback TSRMLS_CC);
+        zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("shutdownCallback"), onShutdownCallback);
         setSelfReference(resource);
     }
     
@@ -465,7 +460,7 @@ PHP_METHOD(UVTcp, connect){
     
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz", &host, &host_len, &port, &onConnectCallback)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "slz", &host, &host_len, &port, &onConnectCallback)) {
         return;
     }
     
@@ -483,21 +478,21 @@ PHP_METHOD(UVTcp, connect){
         RETURN_LONG(ret);
     }
     
-    if (!zend_is_callable(onConnectCallback, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onConnectCallback is not callable");
+    if (!zend_is_callable(onConnectCallback, 0, NULL)) {
+        php_error_docref(NULL, E_WARNING, "param onConnectCallback is not callable");
     }    
     
-    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("connectCallback"), onConnectCallback TSRMLS_CC);
+    zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("connectCallback"), onConnectCallback);
     setSelfReference(resource);
     resource->flag |= UV_TCP_HANDLE_START;    
     RETURN_LONG(ret);
 }
 
-zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client TSRMLS_DC){
+zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client){
     uv_tcp_ext_t *client_resource;
     client_resource = FETCH_OBJECT_RESOURCE(client, uv_tcp_ext_t);
-    zval *loop = zend_read_property(CLASS_ENTRY(UVTcp), server_resource->object, ZEND_STRL("loop"), 0 TSRMLS_CC);
-    zend_update_property(CLASS_ENTRY(UVTcp), client, ZEND_STRL("loop"), loop TSRMLS_CC);
+    zval *loop = zend_read_property(CLASS_ENTRY(UVTcp), server_resource->object, ZEND_STRL("loop"), 0);
+    zend_update_property(CLASS_ENTRY(UVTcp), client, ZEND_STRL("loop"), loop);
     uv_tcp_init(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_tcp_t *) client_resource);    
     
     if(uv_accept((uv_stream_t *) &server_resource->uv_tcp, (uv_stream_t *) &client_resource->uv_tcp)) {

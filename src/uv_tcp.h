@@ -57,11 +57,11 @@ typedef struct write_req_s{
     uv_buf_t buf;
 } write_req_t;
 
-static zend_object_value createUVTcpResource(zend_class_entry *class_type TSRMLS_DC);
+static zend_object_value createUVTcpResource(zend_class_entry *class_type);
 
-void freeUVTcpResource(void *object TSRMLS_DC);
+void freeUVTcpResource(void *object);
 int tcp_write_raw(uv_stream_t * handle, char *message, int size);
-zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client TSRMLS_DC);
+zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client);
 static void tcp_close_cb(uv_handle_t* handle);
 void tcp_close_socket(uv_tcp_ext_t *handle);
 void setSelfReference(uv_tcp_ext_t *resource);

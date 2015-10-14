@@ -18,10 +18,10 @@ typedef struct uv_idle_ext_s{
     zend_object zo;    
 } uv_idle_ext_t;
 
-static zend_object_value createUVIdleResource(zend_class_entry *class_type TSRMLS_DC);
+static zend_object_value createUVIdleResource(zend_class_entry *class_type);
 static void idle_handle_callback(uv_idle_ext_t *idle_handle);
 
-void freeUVIdleResource(void *object TSRMLS_DC);
+void freeUVIdleResource(void *object);
 
 PHP_METHOD(UVIdle, __construct);
 PHP_METHOD(UVIdle, start);

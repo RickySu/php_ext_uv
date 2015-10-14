@@ -54,8 +54,8 @@ typedef struct uv_ssl_ext_s{
     BIO* write_bio;
 } uv_ssl_ext_t;
 
-static zend_object_value createUVSSLResource(zend_class_entry *class_type TSRMLS_DC);
-void freeUVSSLResource(void *object TSRMLS_DC);
+static zend_object_value createUVSSLResource(zend_class_entry *class_type);
+void freeUVSSLResource(void *object);
 static int write_bio_to_socket(uv_ssl_ext_t *resource);
 
 PHP_METHOD(UVSSL, __construct);

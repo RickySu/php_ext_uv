@@ -20,10 +20,10 @@ typedef struct uv_signal_ext_s{
     zend_object zo;    
 } uv_timer_ext_t;
 
-static zend_object_value createUVTimerResource(zend_class_entry *class_type TSRMLS_DC);
+static zend_object_value createUVTimerResource(zend_class_entry *class_type);
 static void timer_handle_callback(uv_timer_ext_t *timer_handle);
 
-void freeUVTimerResource(void *object TSRMLS_DC);
+void freeUVTimerResource(void *object);
 
 PHP_METHOD(UVTimer, __construct);
 PHP_METHOD(UVTimer, start);

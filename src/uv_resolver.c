@@ -3,14 +3,13 @@
 CLASS_ENTRY_FUNCTION_D(UVResolver){
     REGISTER_CLASS(UVResolver);
     OBJECT_HANDLER(UVResolver).clone_obj = NULL;
-    zend_declare_property_null(CLASS_ENTRY(UVResolver), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
+    zend_declare_property_null(CLASS_ENTRY(UVResolver), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
 }
 
 static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct addrinfo *res) {
     zval retval;
     zval *params[] = {NULL, NULL};
     char addr[17] = {'\0'};
-    TSRMLS_FETCH();
     ZVAL_NULL(&retval);
     MAKE_STD_ZVAL(params[0]);
     MAKE_STD_ZVAL(params[1]);
@@ -21,7 +20,7 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct 
         ZVAL_STRING(params[1], addr, 1);
         uv_freeaddrinfo(res);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 2, params TSRMLS_CC);
+    call_user_function(CG(function_table), NULL, info->callback, &retval, 2, params);
     zval_ptr_dtor(&params[0]);
     zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
@@ -32,7 +31,6 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
     int i;
     zval retval;
     zval *params[] = {NULL, NULL, NULL};
-    TSRMLS_FETCH();
     for(i=0;i<=2;i++){
         MAKE_STD_ZVAL(params[i]);
         ZVAL_NULL(params[i]);
@@ -43,7 +41,7 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
         ZVAL_STRING(params[1], hostname, 1);
         ZVAL_STRING(params[2], service, 1);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 3, params TSRMLS_CC);
+    call_user_function(CG(function_table), NULL, info->callback, &retval, 3, params);
     for(i=0;i<=2;i++){
         zval_ptr_dtor(&params[i]);
     }
@@ -55,7 +53,7 @@ PHP_METHOD(UVResolver, __construct){
     zval *loop = NULL;
     zval *self = getThis();
                     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &loop)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &loop)) {
         return;
     }
     
@@ -63,11 +61,11 @@ PHP_METHOD(UVResolver, __construct){
         return;
     }
 
-    if(!check_zval_type(CLASS_ENTRY(UVResolver), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC)){
+    if(!check_zval_type(CLASS_ENTRY(UVResolver), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop)){
         return;
     }
     
-    zend_update_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), loop TSRMLS_CC);                                                                                      
+    zend_update_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), loop);                                                                                      
 }
 
 PHP_METHOD(UVResolver, getnameinfo){
@@ -81,9 +79,9 @@ PHP_METHOD(UVResolver, getnameinfo){
     char cstr_addr[30];
     uv_getnameinfo_ext_t *info;
     
-    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 0 TSRMLS_CC);
+    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 0);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &addr, &addr_len, &nameinfoCallback)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "sz", &addr, &addr_len, &nameinfoCallback)) {
         return;
     }
    
@@ -93,8 +91,8 @@ PHP_METHOD(UVResolver, getnameinfo){
         RETURN_LONG(ret);
     }
     
-    if (!zend_is_callable(nameinfoCallback, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param nameinfoCallback is not callable");
+    if (!zend_is_callable(nameinfoCallback, 0, NULL)) {
+        php_error_docref(NULL, E_WARNING, "param nameinfoCallback is not callable");
     }
     INIT_INFO(info, uv_getnameinfo_ext_t, self, nameinfoCallback);
 
@@ -118,14 +116,14 @@ PHP_METHOD(UVResolver, getaddrinfo){
     char cstr_addr[30];
     uv_getaddrinfo_ext_t *info;
     
-    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 0 TSRMLS_CC);
+    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 0);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssz", &node, &node_len, &service, &service_len, &addrinfoCallback)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "ssz", &node, &node_len, &service, &service_len, &addrinfoCallback)) {
         return;
     }
    
-    if (!zend_is_callable(addrinfoCallback, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param addrinfoCallback is not callable");
+    if (!zend_is_callable(addrinfoCallback, 0, NULL)) {
+        php_error_docref(NULL, E_WARNING, "param addrinfoCallback is not callable");
     }
     INIT_INFO(info, uv_getaddrinfo_ext_t, self, addrinfoCallback);
 

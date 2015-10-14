@@ -7,7 +7,7 @@ CLASS_ENTRY_FUNCTION_D(UVLoop){
     REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_DEFAULT);
     REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_ONCE);
     REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_NOWAIT);
-    zend_declare_property_null(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), ZEND_ACC_PRIVATE|ZEND_ACC_STATIC TSRMLS_CC);
+    zend_declare_property_null(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), ZEND_ACC_PRIVATE|ZEND_ACC_STATIC);
 }
 
 static zend_object *createUVLoopResource(zend_class_entry *ce) {
@@ -29,7 +29,7 @@ void freeUVLoopResource(zend_object *object) {
     if((uv_loop_t *)resource == resource->loop){
         uv_loop_close((uv_loop_t *) resource);
     }
-    zend_object_std_dtor(&resource->zo TSRMLS_CC);
+    zend_object_std_dtor(&resource->zo);
     efree(resource);
 }
 
@@ -38,7 +38,7 @@ PHP_METHOD(UVLoop, run){
     uv_run_mode mode;
     zval *self = getThis();
     uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_loop_ext_t);
-    if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &option) == FAILURE) {
+    if(zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &option) == FAILURE) {
         return;
     }
     switch(option){
@@ -94,12 +94,12 @@ PHP_METHOD(UVLoop, backendTimeout) {
 }
 
 PHP_METHOD(UVLoop, defaultLoop) {
-    zval *instance = zend_read_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), 1 TSRMLS_CC);
+    zval *instance = zend_read_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), 1);
     if(ZVAL_IS_NULL(instance)) {
         instance = NULL;
         MAKE_STD_ZVAL(instance);
         object_init_ex(instance, CLASS_ENTRY(UVLoop));
-        zend_update_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), instance TSRMLS_CC);
+        zend_update_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), instance);
         uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(instance, uv_loop_ext_t);
         resource->loop = uv_default_loop();
     }

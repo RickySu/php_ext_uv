@@ -30,5 +30,5 @@ static zend_always_inline int sock_port(struct sockaddr *addr) {
     c_str = emalloc(str_len + 1); \
     COPY_C_STR(c_str, str, str_len)
 
-int check_zval_type(zend_class_entry *call_ce, const char * function_name, uint function_name_len, zend_class_entry *instance_ce, zval *val TSRMLS_DC);
+int check_zval_type(zend_class_entry *call_ce, const char * function_name, uint function_name_len, zend_class_entry *instance_ce, zval *val);
 #endif	/* UTIL_H */

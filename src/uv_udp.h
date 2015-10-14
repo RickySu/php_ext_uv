@@ -43,9 +43,9 @@ typedef struct send_req_s{
     struct sockaddr_in addr;
 } send_req_t;
 
-static zend_object_value createUVUdpResource(zend_class_entry *class_type TSRMLS_DC);
+static zend_object_value createUVUdpResource(zend_class_entry *class_type);
 
-void freeUVUdpResource(void *object TSRMLS_DC);
+void freeUVUdpResource(void *object);
 
 PHP_METHOD(UVUdp, __construct);
 PHP_METHOD(UVUdp, getSockname);
