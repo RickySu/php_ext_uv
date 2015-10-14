@@ -6,10 +6,10 @@
 #define OBJECT_HANDLER(name) object_handler_##name
 
 #define CLASS_ENTRY_FUNCTION_D(name) \
-    void init_uv_ce_##name(TSRMLS_D)
+    void init_uv_ce_##name()
 
 #define CLASS_ENTRY_FUNCTION_C(name) \
-    init_uv_ce_##name(TSRMLS_C)    
+    init_uv_ce_##name()    
 
 #define DECLARE_CLASS_ENTRY(name) \
     zend_object_handlers OBJECT_HANDLER(name); \
@@ -23,10 +23,10 @@
     static zend_function_entry FUNCTION_ENTRY(name)[]
 
 #define REGISTER_INTERNAL_CLASS(name) \
-    CLASS_ENTRY(name) = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC)
+    CLASS_ENTRY(name) = zend_register_internal_class_ex(&ce, NULL)
     
 #define REGISTER_INTERNAL_CLASS_EX(name, base) \
-    CLASS_ENTRY(name) = zend_register_internal_class_ex(&ce, CLASS_ENTRY(base), NULL TSRMLS_CC)
+    CLASS_ENTRY(name) = zend_register_internal_class_ex(&ce, CLASS_ENTRY(base))
 
 #define INIT_CLASS_WITH_OBJECT_NEW(name, create_function) \
     zend_class_entry ce; \
@@ -62,11 +62,11 @@
 
 #define FETCH_RESOURCE(pointer, type) (type *) (pointer - offsetof(type, zo))
     
-#define FETCH_OBJECT_RESOURCE(object, type) FETCH_RESOURCE(zend_object_store_get_object(object TSRMLS_CC), type)
+#define FETCH_OBJECT_RESOURCE(object, type) FETCH_RESOURCE(zend_object_store_get_object(object), type)
 #define FETCH_UV_LOOP() ((uv_loop_ext_t *)FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t))->loop
 
 #define REGISTER_CLASS_CONSTANT_LONG(class, name) \
-    zend_declare_class_constant_long(CLASS_ENTRY(class), ZEND_STRL(#name), name TSRMLS_CC)
+    zend_declare_class_constant_long(CLASS_ENTRY(class), ZEND_STRL(#name), name)
 #endif
 
 #define Z_DELREF_AND_DTOR_P(o) \

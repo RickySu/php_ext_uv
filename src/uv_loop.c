@@ -3,33 +3,27 @@
 CLASS_ENTRY_FUNCTION_D(UVLoop){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVLoop, createUVLoopResource);
     OBJECT_HANDLER(UVLoop).clone_obj = NULL;
+    OBJECT_HANDLER(UVLoop).free_obj = freeUVLoopResource;
     REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_DEFAULT);
     REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_ONCE);
     REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_NOWAIT);
     zend_declare_property_null(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), ZEND_ACC_PRIVATE|ZEND_ACC_STATIC TSRMLS_CC);
 }
 
-static zend_object_value createUVLoopResource(zend_class_entry *ce TSRMLS_DC) {
-    zend_object_value retval;
+static zend_object *createUVLoopResource(zend_class_entry *ce) {
     uv_loop_ext_t *resource;
     resource = (uv_loop_ext_t *) emalloc(sizeof(uv_loop_ext_t));
     memset(resource, 0, sizeof(uv_loop_ext_t));
     resource->loop = (uv_loop_t *) resource;
     uv_loop_init(resource->loop);
 
-    zend_object_std_init(&resource->zo, ce TSRMLS_CC);
+    zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
-    retval.handle = zend_objects_store_put(
-        &resource->zo,
-        (zend_objects_store_dtor_t) zend_objects_destroy_object,
-        freeUVLoopResource,
-        NULL TSRMLS_CC);
-                                    
-    retval.handlers = &OBJECT_HANDLER(UVLoop);
-    return retval;
+    resource->zo.handlers = &OBJECT_HANDLER(UVLoop);
+    return &resource->zo;
 }
 
-void freeUVLoopResource(void *object TSRMLS_DC) {
+void freeUVLoopResource(zend_object *object) {
     uv_loop_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_loop_ext_t);
     if((uv_loop_t *)resource == resource->loop){

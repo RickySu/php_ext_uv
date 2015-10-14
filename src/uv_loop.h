@@ -10,8 +10,8 @@
 
 CLASS_ENTRY_FUNCTION_D(UVLoop);
 
-static zend_object_value createUVLoopResource(zend_class_entry *class_type TSRMLS_DC);
-void freeUVLoopResource(void *object TSRMLS_DC);
+static zend_object *createUVLoopResource(zend_class_entry *class_type);
+void freeUVLoopResource(zend_object *object);
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVLoop, run), 0)
     ZEND_ARG_INFO(0, option)
