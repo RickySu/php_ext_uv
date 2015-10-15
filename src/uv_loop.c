@@ -16,7 +16,6 @@ static zend_object *createUVLoopResource(zend_class_entry *ce) {
     memset(resource, 0, sizeof(uv_loop_ext_t));
     resource->loop = (uv_loop_t *) resource;
     uv_loop_init(resource->loop);
-
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
     resource->zo.handlers = &OBJECT_HANDLER(UVLoop);

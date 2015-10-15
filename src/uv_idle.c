@@ -12,8 +12,8 @@ static void idle_handle_callback(uv_idle_ext_t *idle_handle){
     zval *idle_cb;
     zval retval, rv;
     ZVAL_NULL(&retval);
-    idle_cb = zend_read_property(CLASS_ENTRY(UVIdle), idle_handle->object, ZEND_STRL("callback"), 1, &rv);
-    call_user_function(CG(function_table), NULL, idle_cb, &retval, 1, idle_handle->object);
+    idle_cb = zend_read_property(CLASS_ENTRY(UVIdle), &idle_handle->object, ZEND_STRL("callback"), 0, &rv);
+    call_user_function(CG(function_table), NULL, idle_cb, &retval, 1, &idle_handle->object);
     zval_dtor(&retval);
 }
 
@@ -46,7 +46,6 @@ PHP_METHOD(UVIdle, __construct){
     zval *self = getThis();
     zend_function *fptr;
     uv_idle_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_idle_ext_t);
-                    
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &loop)) {
         return;
     }
@@ -55,12 +54,11 @@ PHP_METHOD(UVIdle, __construct){
         uv_idle_init(uv_default_loop(), (uv_idle_t *) resource);
         return;
     }
-    
+
     if(!check_zval_type(CLASS_ENTRY(UVIdle), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop))
     {
         return;
     }
-
     zend_update_property(CLASS_ENTRY(UVIdle), self, ZEND_STRL("loop"), loop);
     uv_idle_init(FETCH_UV_LOOP(), (uv_idle_t *) resource);
 }
@@ -83,8 +81,8 @@ PHP_METHOD(UVIdle, start){
     if(ret == 0){
         zend_update_property(CLASS_ENTRY(UVIdle), self, ZEND_STRL("callback"), idle_cb);
         resource->start = 1;
-        resource->object = self;
-        Z_ADDREF_P(resource->object);
+        resource->object = *self;
+        Z_ADDREF_P(&resource->object);
     }
     RETURN_LONG(ret);
 }
@@ -101,7 +99,7 @@ PHP_METHOD(UVIdle, stop){
     ret = uv_idle_stop((uv_idle_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF_P(resource->object);
+        Z_DELREF_P(&resource->object);
     }
     RETURN_LONG(ret);
 }

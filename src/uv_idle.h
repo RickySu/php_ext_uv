@@ -14,7 +14,7 @@ ZEND_END_ARG_INFO()
 typedef struct uv_idle_ext_s{
     uv_idle_t uv_idle;
     int start;
-    zval *object;
+    zval object;
     zend_object zo;    
 } uv_idle_ext_t;
 

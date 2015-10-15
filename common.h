@@ -60,9 +60,9 @@
 #define offsetof(s,memb) ((size_t)((char *)&((s *)0)->memb-(char *)0))
 #endif
 
-#define FETCH_RESOURCE(pointer, type) (type *) (pointer - offsetof(type, zo))
+#define FETCH_RESOURCE(pointer, type) (type *) ((void *)pointer - XtOffsetOf(type, zo))
     
-#define FETCH_OBJECT_RESOURCE(object, type) FETCH_RESOURCE(zend_object_store_get_object(object), type)
+#define FETCH_OBJECT_RESOURCE(object, type) FETCH_RESOURCE(Z_OBJ_P(object), type)
 #define FETCH_UV_LOOP() ((uv_loop_ext_t *)FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t))->loop
 
 #define REGISTER_CLASS_CONSTANT_LONG(class, name) \

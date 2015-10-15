@@ -101,8 +101,8 @@ static void write_cb(uv_write_t *wr, int status){
     
         call_user_function(CG(function_table), NULL, write_cb, &retval, 3, *params);
     
-        zval_ptr_dtor(&params[1]);
-        zval_ptr_dtor(&params[2]);
+        zval_ptr_dtor(params[1]);
+        zval_ptr_dtor(params[2]);
         zval_dtor(&retval);
     }
     efree(req->buf.base);
@@ -128,15 +128,15 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             MAKE_STD_ZVAL(params[1]);
             ZVAL_STRINGL(params[1], buf->base, nread);
             call_user_function(CG(function_table), NULL, read_cb, &retval, 2, *params);
-            zval_ptr_dtor(&params[1]);
+            zval_ptr_dtor(params[1]);
         }
     }
     else{    
         if(IS_NULL != Z_TYPE_P(error_cb)){
             MAKE_STD_ZVAL(params[1]);
             ZVAL_LONG(params[1], nread);        
-            call_user_function(CG(function_table), NULL, error_cb, &retval, 2, params);
-            zval_ptr_dtor(&params[1]);
+            call_user_function(CG(function_table), NULL, error_cb, &retval, 2, *params);
+            zval_ptr_dtor(params[1]);
         }
         tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
     }
