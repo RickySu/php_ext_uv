@@ -17,12 +17,12 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct 
     ZVAL_NULL(params[1]);
     if(status == 0){
         uv_ip4_name((struct sockaddr_in*) res->ai_addr, addr, 16);
-        ZVAL_STRING(params[1], addr, 1);
+        ZVAL_STRING(params[1], addr);
         uv_freeaddrinfo(res);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 2, params);
-    zval_ptr_dtor(&params[0]);
-    zval_ptr_dtor(&params[1]);
+    call_user_function(CG(function_table), NULL, info->callback, &retval, 2, *params);
+    zval_ptr_dtor(params[0]);
+    zval_ptr_dtor(params[1]);
     zval_dtor(&retval);
     RELEASE_INFO(info);
 }
@@ -38,12 +38,12 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
     ZVAL_NULL(&retval);
     ZVAL_LONG(params[0], status);
     if(status == 0){
-        ZVAL_STRING(params[1], hostname, 1);
-        ZVAL_STRING(params[2], service, 1);
+        ZVAL_STRING(params[1], hostname);
+        ZVAL_STRING(params[2], service);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 3, params);
+    call_user_function(CG(function_table), NULL, info->callback, &retval, 3, *params);
     for(i=0;i<=2;i++){
-        zval_ptr_dtor(&params[i]);
+        zval_ptr_dtor(params[i]);
     }
     zval_dtor(&retval);
     RELEASE_INFO(info);
@@ -74,12 +74,12 @@ PHP_METHOD(UVResolver, getnameinfo){
     const char *addr;
     int addr_len;
     zval *nameinfoCallback;
-    zval *loop;
+    zval *loop, rv;
     static struct sockaddr_in addr4;
     char cstr_addr[30];
     uv_getnameinfo_ext_t *info;
     
-    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 0);
+    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 1, &rv);
 
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "sz", &addr, &addr_len, &nameinfoCallback)) {
         return;
@@ -111,12 +111,12 @@ PHP_METHOD(UVResolver, getaddrinfo){
     char *c_node, *c_service;
     int node_len, service_len;
     zval *addrinfoCallback;
-    zval *loop;
+    zval *loop, rv;
     static struct sockaddr_in addr4;
     char cstr_addr[30];
     uv_getaddrinfo_ext_t *info;
     
-    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 0);
+    loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 1, &rv);
 
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "ssz", &node, &node_len, &service, &service_len, &addrinfoCallback)) {
         return;

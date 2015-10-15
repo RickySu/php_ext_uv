@@ -3,22 +3,21 @@
 CLASS_ENTRY_FUNCTION_D(UVIdle){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVIdle, createUVIdleResource);
     OBJECT_HANDLER(UVIdle).clone_obj = NULL;
+    OBJECT_HANDLER(UVIdle).free_obj = freeUVIdleResource;
     zend_declare_property_null(CLASS_ENTRY(UVIdle), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
     zend_declare_property_null(CLASS_ENTRY(UVIdle), ZEND_STRL("callback"), ZEND_ACC_PRIVATE);
 }
 
 static void idle_handle_callback(uv_idle_ext_t *idle_handle){
     zval *idle_cb;
-    zval retval;
-    zval *params[] = {idle_handle->object};
+    zval retval, rv;
     ZVAL_NULL(&retval);
-    idle_cb = zend_read_property(CLASS_ENTRY(UVIdle), idle_handle->object, ZEND_STRL("callback"), 0);
-    call_user_function(CG(function_table), NULL, idle_cb, &retval, 1, params);
+    idle_cb = zend_read_property(CLASS_ENTRY(UVIdle), idle_handle->object, ZEND_STRL("callback"), 1, &rv);
+    call_user_function(CG(function_table), NULL, idle_cb, &retval, 1, idle_handle->object);
     zval_dtor(&retval);
 }
 
-static zend_object_value createUVIdleResource(zend_class_entry *ce) {
-    zend_object_value retval;
+static zend_object *createUVIdleResource(zend_class_entry *ce) {
     uv_idle_ext_t *resource;
     resource = (uv_idle_ext_t *) emalloc(sizeof(uv_idle_ext_t));
     memset(resource, 0, sizeof(uv_idle_ext_t));
@@ -26,17 +25,11 @@ static zend_object_value createUVIdleResource(zend_class_entry *ce) {
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
     
-    retval.handle = zend_objects_store_put(
-        &resource->zo,
-        (zend_objects_store_dtor_t) zend_objects_destroy_object,
-        freeUVIdleResource,
-        NULL);
-
-    retval.handlers = &OBJECT_HANDLER(UVIdle);
-    return retval;
+    resource->zo.handlers = &OBJECT_HANDLER(UVIdle);
+    return &resource->zo;
 }
 
-void freeUVIdleResource(void *object) {
+void freeUVIdleResource(zend_object *object) {
     uv_idle_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_idle_ext_t);
     if(resource->start){

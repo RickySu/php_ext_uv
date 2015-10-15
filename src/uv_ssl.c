@@ -3,6 +3,7 @@
 CLASS_ENTRY_FUNCTION_D(UVSSL){
     EXTENDS_CLASS_WITH_OBJECT_NEW(UVSSL, createUVSSLResource, UVTcp);
     OBJECT_HANDLER(UVSSL).clone_obj = NULL;
+    OBJECT_HANDLER(UVSSL).free_obj = freeUVSSLResource;
     zend_declare_property_null(CLASS_ENTRY(UVSSL), ZEND_STRL("sslServerNameCallback"), ZEND_ACC_PRIVATE);
     zend_declare_property_null(CLASS_ENTRY(UVSSL), ZEND_STRL("sslHandshakeCallback"), ZEND_ACC_PRIVATE);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV2);
@@ -20,11 +21,11 @@ static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
 }
 
 static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) {
-    zval *params[] = {resource->uv_tcp_ext.object, NULL};
+    zval *params[] = {resource->uv_tcp_ext.object, NULL}, rv;
     uv_tcp_ext_t *tcp_resource = (uv_tcp_ext_t *) resource;
-    zval *readCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("readCallback"), 0);
-    zval *errorCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("errorCallback"), 0);
-    zval *sslHandshakeCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslHandshakeCallback"), 0);
+    zval *readCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("readCallback"), 1, &rv);
+    zval *errorCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("errorCallback"), 1, &rv);
+    zval *sslHandshakeCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslHandshakeCallback"), 1, &rv);
     zval retval;
     char read_buf[256];
     int size, err, ret, read_buf_index;
@@ -46,7 +47,7 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             else{
                 if(IS_NULL != Z_TYPE_P(sslHandshakeCallback)){
                     ZVAL_NULL(&retval);
-                    call_user_function(CG(function_table), NULL, sslHandshakeCallback, &retval, 1, params);
+                    call_user_function(CG(function_table), NULL, sslHandshakeCallback, &retval, 1, *params);
                     zval_dtor(&retval);
                 }
             }
@@ -64,9 +65,9 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
                 if(IS_NULL != Z_TYPE_P(readCallback)){
                     ZVAL_NULL(&retval);
                     MAKE_STD_ZVAL(params[1]);
-                    ZVAL_STRINGL(params[1], read_buf, read_buf_index, 1);
-                    call_user_function(CG(function_table), NULL, readCallback, &retval, 2, params);
-                    zval_ptr_dtor(&params[1]);
+                    ZVAL_STRINGL(params[1], read_buf, read_buf_index);
+                    call_user_function(CG(function_table), NULL, readCallback, &retval, 2, *params);
+                    zval_ptr_dtor(params[1]);
                     zval_dtor(&retval);
                 }
                 read_buf_index = 0;
@@ -81,8 +82,8 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             ZVAL_NULL(&retval);
             MAKE_STD_ZVAL(params[1]);
             ZVAL_LONG(params[1], nread);
-            call_user_function(CG(function_table), NULL, errorCallback, &retval, 2, params);
-            zval_ptr_dtor(&params[1]);
+            call_user_function(CG(function_table), NULL, errorCallback, &retval, 2, *params);
+            zval_ptr_dtor(params[1]);
             zval_dtor(&retval);
         }
         tcp_close_socket((uv_tcp_ext_t *) resource);
@@ -92,24 +93,24 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
 
 static int sni_cb(SSL *s, int *ad, void *arg) {
     long n;
-    zval *params[] = {NULL};
-    zval retval;
+    zval param;
+    zval retval, rv;
     uv_ssl_ext_t *resource = (uv_ssl_ext_t *) arg;
     uv_tcp_ext_t *tcp_resource = &resource->uv_tcp_ext;
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
-    zval *sslServerNameCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslServerNameCallback"), 0);
+    zval *sslServerNameCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslServerNameCallback"), 1, &rv);
     if(servername != NULL && IS_NULL != Z_TYPE_P(sslServerNameCallback)){
         ZVAL_NULL(&retval);
-        MAKE_STD_ZVAL(params[0]);
-        ZVAL_STRING(params[0], servername, 1);
-        call_user_function(CG(function_table), NULL, sslServerNameCallback, &retval, 1, params);
+        MAKE_STD_ZVAL(&param);
+        ZVAL_STRING(&param, servername);
+        call_user_function(CG(function_table), NULL, sslServerNameCallback, &retval, 1, &param);
         if(Z_TYPE_P(&retval) == IS_LONG){
             n = Z_LVAL_P(&retval);
             if(n>=0 && n<resource->nctx){
                 SSL_set_SSL_CTX(s, resource->ctx[n]);
             }
         }
-        zval_ptr_dtor(&params[0]);
+        zval_dtor(&param);
         zval_dtor(&retval);
     }
     return SSL_TLSEXT_ERR_OK;
@@ -119,12 +120,12 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     uv_ssl_ext_t *resource = (uv_ssl_ext_t *) req->handle;
     uv_tcp_ext_t *tcp_resource = (uv_tcp_ext_t *) resource;
     zval *params[] = {tcp_resource->object, NULL};
-    zval retval;
+    zval retval, rv;
     ZVAL_NULL(&retval);
     MAKE_STD_ZVAL(params[1]);
     ZVAL_LONG(params[1], status);
     
-    zval *callback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("connectCallback"), 0);
+    zval *callback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("connectCallback"), 1, &rv);
     
     if(uv_read_start((uv_stream_t *) resource, alloc_cb, (uv_read_cb) read_cb)){
         return;
@@ -138,14 +139,13 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     SSL_set_connect_state(resource->ssl);
     SSL_connect(resource->ssl);
     write_bio_to_socket(resource);
-    call_user_function(CG(function_table), NULL, callback, &retval, 2, params);
-    zval_ptr_dtor(&params[1]);
+    call_user_function(CG(function_table), NULL, callback, &retval, 2, *params);
+    zval_ptr_dtor(params[1]);
     zval_dtor(&retval);
 }
 
 
-static zend_object_value createUVSSLResource(zend_class_entry *ce) {
-    zend_object_value retval;
+static zend_object *createUVSSLResource(zend_class_entry *ce) {
     uv_ssl_ext_t *ssl_resource;
     uv_tcp_ext_t *tcp_resource;
 
@@ -155,17 +155,11 @@ static zend_object_value createUVSSLResource(zend_class_entry *ce) {
     zend_object_std_init(&tcp_resource->zo, ce);
     object_properties_init(&tcp_resource->zo, ce);
                             
-    retval.handle = zend_objects_store_put(
-        &tcp_resource->zo,
-        (zend_objects_store_dtor_t) zend_objects_destroy_object,
-        freeUVSSLResource,
-        NULL);
-                                                                
-    retval.handlers = &OBJECT_HANDLER(UVSSL);
-    return retval;
+    tcp_resource->zo.handlers = &OBJECT_HANDLER(UVSSL);
+    return &tcp_resource->zo;
 }
 
-void freeUVSSLResource(void *object) {
+void freeUVSSLResource(zend_object *object) {
     int i;
     uv_ssl_ext_t *resource;
     resource = (uv_ssl_ext_t *) FETCH_RESOURCE(object, uv_tcp_ext_t);
