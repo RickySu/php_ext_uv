@@ -8,44 +8,39 @@ CLASS_ENTRY_FUNCTION_D(UVResolver){
 
 static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct addrinfo *res) {
     zval retval;
-    zval *params[] = {NULL, NULL};
+    zval params[] = {NULL, NULL};
     char addr[17] = {'\0'};
     ZVAL_NULL(&retval);
-    MAKE_STD_ZVAL(params[0]);
-    MAKE_STD_ZVAL(params[1]);
-    ZVAL_LONG(params[0], status);
-    ZVAL_NULL(params[1]);
+    ZVAL_LONG(&params[0], status);
+    ZVAL_NULL(&params[1]);
     if(status == 0){
         uv_ip4_name((struct sockaddr_in*) res->ai_addr, addr, 16);
-        ZVAL_STRING(params[1], addr);
+        ZVAL_STRING(&params[1], addr);
         uv_freeaddrinfo(res);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 2, *params);
-    zval_ptr_dtor(params[0]);
-    zval_ptr_dtor(params[1]);
-    zval_dtor(&retval);
+    call_user_function(CG(function_table), NULL, &info->callback, &retval, 2, params);
+    zval_ptr_dtor(&params[0]);
+    zval_ptr_dtor(&params[1]);
+    zval_ptr_dtor(&retval);
     RELEASE_INFO(info);
 }
 
 static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const char *hostname, const char *service) {
-    int i;
     zval retval;
-    zval *params[] = {NULL, NULL, NULL};
-    for(i=0;i<=2;i++){
-        MAKE_STD_ZVAL(params[i]);
-        ZVAL_NULL(params[i]);
-    }
+    zval params[3];
     ZVAL_NULL(&retval);
-    ZVAL_LONG(params[0], status);
+    ZVAL_LONG(&params[0], status);
+    ZVAL_NULL(&params[1]);
+    ZVAL_NULL(&params[2]); 
     if(status == 0){
-        ZVAL_STRING(params[1], hostname);
-        ZVAL_STRING(params[2], service);
+        ZVAL_STRING(&params[1], hostname);
+        ZVAL_STRING(&params[2], service);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 3, *params);
-    for(i=0;i<=2;i++){
-        zval_ptr_dtor(params[i]);
-    }
-    zval_dtor(&retval);
+    call_user_function(CG(function_table), NULL, &info->callback, &retval, 3, params);
+    zval_ptr_dtor(&params[0]);
+    zval_ptr_dtor(&params[1]);
+    zval_ptr_dtor(&params[2]);
+    zval_ptr_dtor(&retval);
     RELEASE_INFO(info);
 }
 
@@ -71,45 +66,38 @@ PHP_METHOD(UVResolver, __construct){
 PHP_METHOD(UVResolver, getnameinfo){
     long ret;
     zval *self = getThis();
-    const char *addr;
-    int addr_len;
+    const char *addr = NULL;
+    size_t addr_len;
     zval *nameinfoCallback;
     zval *loop, rv;
     static struct sockaddr_in addr4;
     char cstr_addr[30];
     uv_getnameinfo_ext_t *info;
-    
     loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 1, &rv);
-
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "sz", &addr, &addr_len, &nameinfoCallback)) {
         return;
     }
-   
     COPY_C_STR(cstr_addr, addr, addr_len);
-     
     if((ret = uv_ip4_addr(addr, 0, &addr4)) !=0){
         RETURN_LONG(ret);
     }
-    
     if (!zend_is_callable(nameinfoCallback, 0, NULL)) {
         php_error_docref(NULL, E_WARNING, "param nameinfoCallback is not callable");
     }
     INIT_INFO(info, uv_getnameinfo_ext_t, self, nameinfoCallback);
-
     if((ret = uv_getnameinfo(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_getnameinfo_t *) info, (uv_getnameinfo_cb) on_nameinfo_resolved, (const struct sockaddr*) &addr4, 0)) != 0) {
         RELEASE_INFO(info);
     }
     
-    RETURN_LONG(ret);    
-    
+    RETURN_LONG(ret);
 }
 
 PHP_METHOD(UVResolver, getaddrinfo){
     long ret;
     zval *self = getThis();
-    const char *node, *service;
+    const char *node = NULL, *service = NULL;
     char *c_node, *c_service;
-    int node_len, service_len;
+    size_t node_len, service_len;
     zval *addrinfoCallback;
     zval *loop, rv;
     static struct sockaddr_in addr4;
@@ -126,7 +114,6 @@ PHP_METHOD(UVResolver, getaddrinfo){
         php_error_docref(NULL, E_WARNING, "param addrinfoCallback is not callable");
     }
     INIT_INFO(info, uv_getaddrinfo_ext_t, self, addrinfoCallback);
-
     MAKE_C_STR(c_node, node, node_len);
     MAKE_C_STR(c_service, service, service_len);
         
@@ -137,5 +124,4 @@ PHP_METHOD(UVResolver, getaddrinfo){
     efree(c_node);
     efree(c_service);
     RETURN_LONG(ret);    
-    
 }

@@ -11,14 +11,14 @@ CLASS_ENTRY_FUNCTION_D(UVSignal){
 static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
     zval *signal_cb;
     zval retval, rv;
-    zval *params[] = {signal_handle->object, NULL};
+    zval params[2];
+    params[0] = signal_handle->object;
     ZVAL_NULL(&retval);
-    MAKE_STD_ZVAL(params[1]);
-    ZVAL_LONG(params[1], signo);
-    signal_cb = zend_read_property(CLASS_ENTRY(UVSignal), signal_handle->object, ZEND_STRL("callback"), 1, &rv);
-    call_user_function(CG(function_table), NULL, signal_cb, &retval, 2, *params);
-    zval_ptr_dtor(params[1]);    
-    zval_dtor(&retval);
+    ZVAL_LONG(&params[1], signo);
+    signal_cb = zend_read_property(CLASS_ENTRY(UVSignal), &signal_handle->object, ZEND_STRL("callback"), 1, &rv);
+    call_user_function(CG(function_table), NULL, signal_cb, &retval, 2, params);
+    zval_ptr_dtor(&params[1]);    
+    zval_ptr_dtor(&retval);
 }
 
 static zend_object *createUVSignalResource(zend_class_entry *ce) {
@@ -86,8 +86,8 @@ PHP_METHOD(UVSignal, start){
     if(ret == 0){
         zend_update_property(CLASS_ENTRY(UVSignal), self, ZEND_STRL("callback"), signal_cb);
         resource->start = 1;
-        resource->object = self;
-        Z_ADDREF_P(resource->object);
+        resource->object = *self;
+        Z_ADDREF_P(self);
     }
     RETURN_LONG(ret);
 }
@@ -104,7 +104,7 @@ PHP_METHOD(UVSignal, stop){
     ret = uv_signal_stop((uv_signal_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF_P(resource->object);
+        Z_DELREF_P(&resource->object);
     }
     RETURN_LONG(ret);
 }

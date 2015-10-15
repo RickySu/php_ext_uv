@@ -48,7 +48,7 @@ typedef struct uv_tcp_ext_s{
     int sockPort;
     char *peerAddr;
     int peerPort;
-    zval *object;
+    zval object;
     zend_object zo;    
 } uv_tcp_ext_t;
 
@@ -60,7 +60,7 @@ typedef struct write_req_s{
 static zend_object *createUVTcpResource(zend_class_entry *class_type);
 
 void freeUVTcpResource(zend_object *object);
-int tcp_write_raw(uv_stream_t * handle, char *message, int size);
+int tcp_write_raw(uv_stream_t * handle, const char *message, int size);
 zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client);
 static void tcp_close_cb(uv_handle_t* handle);
 void tcp_close_socket(uv_tcp_ext_t *handle);

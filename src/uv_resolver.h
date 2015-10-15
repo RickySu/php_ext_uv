@@ -5,14 +5,14 @@
 
 #define INIT_INFO(i, t, o, c) \
     i = emalloc(sizeof(t)); \
-    i->object = o; \
-    i->callback = c; \
+    i->object = *o; \
+    i->callback = *c; \
     Z_ADDREF_P(c); \
     Z_ADDREF_P(o)
     
 #define RELEASE_INFO(info) \
-    Z_DELREF_P(info->callback); \
-    Z_DELREF_P(info->object); \
+    Z_DELREF_P(&info->callback); \
+    Z_DELREF_P(&info->object); \
     efree(info)
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVResolver, __construct), 0)
@@ -32,14 +32,14 @@ ZEND_END_ARG_INFO()
 
 typedef struct uv_getaddrinfo_ext_s{
     uv_getaddrinfo_t uv_getaddrinfo;
-    zval *object;
-    zval *callback;
+    zval object;
+    zval callback;
 } uv_getaddrinfo_ext_t;
 
 typedef struct uv_getnameinfo_ext_s{
     uv_getnameinfo_t uv_getnameinfo;
-    zval *object;
-    zval *callback;
+    zval object;
+    zval callback;
 } uv_getnameinfo_ext_t;
 
 PHP_METHOD(UVResolver, __construct);
