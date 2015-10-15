@@ -3,22 +3,21 @@
 CLASS_ENTRY_FUNCTION_D(UVTimer){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTimer, createUVTimerResource);
     OBJECT_HANDLER(UVTimer).clone_obj = NULL;
+    OBJECT_HANDLER(UVTimer).free_obj = freeUVTimerResource;
     zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
     zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("callback"), ZEND_ACC_PRIVATE);
 }
 
 static void timer_handle_callback(uv_timer_ext_t *timer_handle){
     zval *timer_cb;
-    zval retval;
-    zval *params[] = {timer_handle->object};
+    zval retval, rv;
     ZVAL_NULL(&retval);
-    timer_cb = zend_read_property(CLASS_ENTRY(UVTimer), timer_handle->object, ZEND_STRL("callback"), 0);
-    call_user_function(CG(function_table), NULL, timer_cb, &retval, 1, params);
+    timer_cb = zend_read_property(CLASS_ENTRY(UVTimer), timer_handle->object, ZEND_STRL("callback"), 1, &rv);
+    call_user_function(CG(function_table), NULL, timer_cb, &retval, 1, timer_handle->object);
     zval_dtor(&retval);
 }
 
-static zend_object_value createUVTimerResource(zend_class_entry *ce) {
-    zend_object_value retval;
+static zend_object *createUVTimerResource(zend_class_entry *ce) {
     uv_timer_ext_t *resource;
     resource = (uv_timer_ext_t *) emalloc(sizeof(uv_timer_ext_t));
     memset(resource, 0, sizeof(uv_timer_ext_t));
@@ -26,17 +25,11 @@ static zend_object_value createUVTimerResource(zend_class_entry *ce) {
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
 
-    retval.handle = zend_objects_store_put(
-        &resource->zo,
-        (zend_objects_store_dtor_t) zend_objects_destroy_object,
-        freeUVTimerResource,
-        NULL);
-
-    retval.handlers = &OBJECT_HANDLER(UVTimer);
-    return retval;
+    resource->zo.handlers = &OBJECT_HANDLER(UVTimer);
+    return &resource->zo;
 }
 
-void freeUVTimerResource(void *object) {
+void freeUVTimerResource(zend_object *object) {
     uv_timer_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_timer_ext_t);
     if(resource->start){

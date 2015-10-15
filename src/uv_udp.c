@@ -3,6 +3,7 @@
 CLASS_ENTRY_FUNCTION_D(UVUdp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVUdp, createUVUdpResource);
     OBJECT_HANDLER(UVUdp).clone_obj = NULL;
+    OBJECT_HANDLER(UVUdp).free_obj = freeUVUdpResource;
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("recvCallback"), ZEND_ACC_PRIVATE);
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("sendCallback"), ZEND_ACC_PRIVATE);
@@ -40,24 +41,24 @@ static void close_cb(uv_handle_t* handle) {
 static void send_cb(uv_udp_send_t* sr, int status) {
     send_req_t *req = (send_req_t *) sr;
     uv_udp_ext_t *resource = (uv_udp_ext_t *) sr->handle;
-    zval retval;
+    zval retval, rv;
     zval *params[] = {resource->object, NULL, NULL, NULL};
     zval *send_cb;
-    send_cb = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("sendCallback"), 0);
+    send_cb = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("sendCallback"), 1, &rv);
     
     if(IS_NULL != Z_TYPE_P(send_cb)){    
         MAKE_STD_ZVAL(params[1]);
-        ZVAL_STRING(params[1], sock_addr((struct sockaddr *) &req->addr), 1);
+        ZVAL_STRING(params[1], sock_addr((struct sockaddr *) &req->addr));
         MAKE_STD_ZVAL(params[2]);
         ZVAL_LONG(params[2], sock_port((struct sockaddr *) &req->addr));
         MAKE_STD_ZVAL(params[3]);
         ZVAL_LONG(params[3], status);
     
-        call_user_function(CG(function_table), NULL, send_cb, &retval, 4, params);
+        call_user_function(CG(function_table), NULL, send_cb, &retval, 4, *params);
     
-        zval_ptr_dtor(&params[1]);
-        zval_ptr_dtor(&params[2]);
-        zval_ptr_dtor(&params[3]);
+        zval_ptr_dtor(params[1]);
+        zval_ptr_dtor(params[2]);
+        zval_ptr_dtor(params[3]);
         zval_dtor(&retval);
     }
     efree(req->buf.base);
@@ -72,27 +73,27 @@ static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
 static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, const struct sockaddr* addr, unsigned int flags) {
     zval *recvCallback, *errorCallback;
     zval *params[] = {resource->object, NULL, NULL, NULL, NULL};
-    zval retval;
-    recvCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("recvCallback"), 0);
-    errorCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("errorCallback"), 0);    
+    zval retval, rv;
+    recvCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("recvCallback"), 1, &rv);
+    errorCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("errorCallback"), 1, &rv);    
     if(nread > 0){
         if(IS_NULL != Z_TYPE_P(recvCallback)){
             MAKE_STD_ZVAL(params[1]);
-            ZVAL_STRING(params[1], sock_addr((struct sockaddr *) addr), 1);
+            ZVAL_STRING(params[1], sock_addr((struct sockaddr *) addr));
             MAKE_STD_ZVAL(params[2]);
             ZVAL_LONG(params[2], sock_port((struct sockaddr *) addr));
             MAKE_STD_ZVAL(params[3]);
-            ZVAL_STRINGL(params[3], buf->base, nread, 1);
+            ZVAL_STRINGL(params[3], buf->base, nread);
             
             MAKE_STD_ZVAL(params[4]);
             ZVAL_LONG(params[4], flags);
     
-            call_user_function(CG(function_table), NULL, recvCallback, &retval, 5, params);
+            call_user_function(CG(function_table), NULL, recvCallback, &retval, 5, *params);
     
-            zval_ptr_dtor(&params[1]);
-            zval_ptr_dtor(&params[2]);
-            zval_ptr_dtor(&params[3]);
-            zval_ptr_dtor(&params[4]);
+            zval_ptr_dtor(params[1]);
+            zval_ptr_dtor(params[2]);
+            zval_ptr_dtor(params[3]);
+            zval_ptr_dtor(params[4]);
             zval_dtor(&retval);
         }    
     }
@@ -103,18 +104,17 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
             MAKE_STD_ZVAL(params[2]);
             ZVAL_LONG(params[2], flags);
     
-            call_user_function(CG(function_table), NULL, errorCallback, &retval, 3, params);
+            call_user_function(CG(function_table), NULL, errorCallback, &retval, 3, *params);
     
-            zval_ptr_dtor(&params[1]);
-            zval_ptr_dtor(&params[2]);
+            zval_ptr_dtor(params[1]);
+            zval_ptr_dtor(params[2]);
             zval_dtor(&retval);
         }
     }
     efree(buf->base);
 }
 
-static zend_object_value createUVUdpResource(zend_class_entry *ce) {
-    zend_object_value retval;
+static zend_object *createUVUdpResource(zend_class_entry *ce) {
     uv_udp_ext_t *resource;
     resource = (uv_udp_ext_t *) emalloc(sizeof(uv_udp_ext_t));
     memset(resource, 0, sizeof(uv_udp_ext_t));
@@ -122,17 +122,11 @@ static zend_object_value createUVUdpResource(zend_class_entry *ce) {
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
     
-    retval.handle = zend_objects_store_put(
-        &resource->zo,
-        (zend_objects_store_dtor_t) zend_objects_destroy_object,
-        freeUVUdpResource,
-        NULL);
-
-    retval.handlers = &OBJECT_HANDLER(UVUdp);
-    return retval;
+    resource->zo.handlers = &OBJECT_HANDLER(UVUdp);
+    return &resource->zo;
 }
 
-void freeUVUdpResource(void *object) {
+void freeUVUdpResource(zend_object *object) {
     uv_udp_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_udp_ext_t);
     
@@ -185,7 +179,7 @@ PHP_METHOD(UVUdp, getSockname){
     if(resource->sockPort == 0){
         RETURN_FALSE;
     }
-    RETURN_STRING(resource->sockAddr, 1);
+    RETURN_STRING(resource->sockAddr);
 }
 
 PHP_METHOD(UVUdp, getSockport){
