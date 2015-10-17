@@ -2,6 +2,7 @@
 
 CLASS_ENTRY_FUNCTION_D(UVSignal){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVSignal, createUVSignalResource);
+    OBJECT_HANDLER(UVSignal).offset = XtOffsetOf(uv_signal_ext_t, zo);
     OBJECT_HANDLER(UVSignal).clone_obj = NULL;
     OBJECT_HANDLER(UVSignal).free_obj = freeUVSignalResource;
     zend_declare_property_null(CLASS_ENTRY(UVSignal), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
@@ -23,8 +24,7 @@ static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
 
 static zend_object *createUVSignalResource(zend_class_entry *ce) {
     uv_signal_ext_t *resource;
-    resource = (uv_signal_ext_t *) emalloc(sizeof(uv_signal_ext_t));
-    memset(resource, 0, sizeof(uv_signal_ext_t));
+    resource = resource = ALLOC_RESOURCE(uv_signal_ext_t);;
 
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);

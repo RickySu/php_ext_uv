@@ -19,8 +19,7 @@ static void timer_handle_callback(uv_timer_ext_t *timer_handle){
 
 static zend_object *createUVTimerResource(zend_class_entry *ce) {
     uv_timer_ext_t *resource;
-    resource = (uv_timer_ext_t *) emalloc(sizeof(uv_timer_ext_t));
-    memset(resource, 0, sizeof(uv_timer_ext_t));
+    resource = resource = ALLOC_RESOURCE(uv_timer_ext_t);
 
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);

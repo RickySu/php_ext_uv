@@ -45,13 +45,13 @@ ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, connect), 0)
 ZEND_END_ARG_INFO()
 
 typedef struct uv_ssl_ext_s{
-    uv_tcp_ext_t uv_tcp_ext;
     const SSL_METHOD *ssl_method;
     SSL_CTX** ctx;
     int nctx;
     SSL* ssl;
     BIO* read_bio;
     BIO* write_bio;
+    uv_tcp_ext_t uv_tcp_ext;
 } uv_ssl_ext_t;
 
 static zend_object *createUVSSLResource(zend_class_entry *class_type);
@@ -78,4 +78,11 @@ DECLARE_FUNCTION_ENTRY(UVSSL) = {
     PHP_ME(UVSSL, connect, ARGINFO(UVSSL, connect), ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
+
+#define FETCH_SSL_RESOURCE(zo) \
+    ((uv_ssl_ext_t *) FETCH_RESOURCE_FROM_EXTEND(FETCH_RESOURCE(zo, uv_tcp_ext_t), uv_tcp_ext, uv_ssl_ext_t))
+
+#define FETCH_OBJECT_SSL_RESOURCE(object) \
+    (FETCH_RESOURCE_FROM_EXTEND(FETCH_OBJECT_RESOURCE(object, uv_tcp_ext_t), uv_tcp_ext, uv_ssl_ext_t))
+
 #endif

@@ -30,8 +30,8 @@
 
 #define INIT_CLASS_WITH_OBJECT_NEW(name, create_function) \
     zend_class_entry ce; \
-    memcpy(&OBJECT_HANDLER(name), zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
-    INIT_CLASS_ENTRY(ce, #name, FUNCTION_ENTRY(name))
+    INIT_CLASS_ENTRY(ce, #name, FUNCTION_ENTRY(name)); \
+    memcpy(&OBJECT_HANDLER(name), zend_get_std_object_handlers(), sizeof(zend_object_handlers))
 
 #define REGISTER_CLASS_WITH_OBJECT_NEW(name, create_function) \
     INIT_CLASS_WITH_OBJECT_NEW(name, create_function); \
@@ -61,13 +61,17 @@
 #endif
 
 #define FETCH_RESOURCE(pointer, type) (type *) ((void *)pointer - XtOffsetOf(type, zo))
+
+#define FETCH_RESOURCE_FROM_EXTEND(pointer, item, type) (type *) ((void *)pointer - XtOffsetOf(type, item))
     
 #define FETCH_OBJECT_RESOURCE(object, type) FETCH_RESOURCE(Z_OBJ_P(object), type)
 #define FETCH_UV_LOOP() ((uv_loop_ext_t *)FETCH_OBJECT_RESOURCE(loop, uv_loop_ext_t))->loop
 
 #define REGISTER_CLASS_CONSTANT_LONG(class, name) \
     zend_declare_class_constant_long(CLASS_ENTRY(class), ZEND_STRL(#name), name)
-#endif
+
+#define ALLOC_RESOURCE(x) \
+    ((x *) ecalloc(1, sizeof(x) + zend_object_properties_size(ce)))
 
 #define Z_DELREF_AND_DTOR_P(o) \
     do{ \
@@ -78,3 +82,6 @@
             Z_DELREF_P(o); \
         }\
     }while(0)
+
+#endif
+

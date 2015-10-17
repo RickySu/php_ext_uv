@@ -2,6 +2,7 @@
 
 CLASS_ENTRY_FUNCTION_D(UVLoop){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVLoop, createUVLoopResource);
+    OBJECT_HANDLER(UVLoop).offset = XtOffsetOf(uv_loop_ext_t, zo);
     OBJECT_HANDLER(UVLoop).clone_obj = NULL;
     OBJECT_HANDLER(UVLoop).free_obj = freeUVLoopResource;
     REGISTER_CLASS_CONSTANT_LONG(UVLoop, RUN_DEFAULT);
@@ -12,8 +13,7 @@ CLASS_ENTRY_FUNCTION_D(UVLoop){
 
 static zend_object *createUVLoopResource(zend_class_entry *ce) {
     uv_loop_ext_t *resource;
-    resource = (uv_loop_ext_t *) emalloc(sizeof(uv_loop_ext_t));
-    memset(resource, 0, sizeof(uv_loop_ext_t));
+    resource = ALLOC_RESOURCE(uv_loop_ext_t);
     resource->loop = (uv_loop_t *) resource;
     uv_loop_init(resource->loop);
     zend_object_std_init(&resource->zo, ce);

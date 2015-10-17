@@ -3,8 +3,8 @@
 
 typedef struct uv_loop_ext_s{
     uv_loop_t __loop__;
-    zend_object zo;
     uv_loop_t *loop;
+    zend_object zo;
 } uv_loop_ext_t;
 
 #endif

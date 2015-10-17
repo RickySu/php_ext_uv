@@ -58,8 +58,8 @@ typedef struct write_req_s{
 } write_req_t;
 
 static zend_object *createUVTcpResource(zend_class_entry *class_type);
-
-void freeUVTcpResource(zend_object *object);
+static void freeUVTcpResource(zend_object *object);
+void releaseResource(uv_tcp_ext_t *resource);
 int tcp_write_raw(uv_stream_t * handle, const char *message, int size);
 zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *client);
 static void tcp_close_cb(uv_handle_t* handle);

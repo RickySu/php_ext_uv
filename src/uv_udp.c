@@ -116,8 +116,7 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
 
 static zend_object *createUVUdpResource(zend_class_entry *ce) {
     uv_udp_ext_t *resource;
-    resource = (uv_udp_ext_t *) emalloc(sizeof(uv_udp_ext_t));
-    memset(resource, 0, sizeof(uv_udp_ext_t));
+    resource = resource = ALLOC_RESOURCE(uv_udp_ext_t);
 
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);

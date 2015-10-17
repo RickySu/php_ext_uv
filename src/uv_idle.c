@@ -2,6 +2,7 @@
 
 CLASS_ENTRY_FUNCTION_D(UVIdle){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVIdle, createUVIdleResource);
+    OBJECT_HANDLER(UVIdle).offset = XtOffsetOf(uv_idle_ext_t, zo);;
     OBJECT_HANDLER(UVIdle).clone_obj = NULL;
     OBJECT_HANDLER(UVIdle).free_obj = freeUVIdleResource;
     zend_declare_property_null(CLASS_ENTRY(UVIdle), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
@@ -19,8 +20,7 @@ static void idle_handle_callback(uv_idle_ext_t *idle_handle){
 
 static zend_object *createUVIdleResource(zend_class_entry *ce) {
     uv_idle_ext_t *resource;
-    resource = (uv_idle_ext_t *) emalloc(sizeof(uv_idle_ext_t));
-    memset(resource, 0, sizeof(uv_idle_ext_t));
+    resource = ALLOC_RESOURCE(uv_idle_ext_t);
 
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
