@@ -8,9 +8,8 @@ CLASS_ENTRY_FUNCTION_D(UVResolver){
 
 static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct addrinfo *res) {
     zval retval;
-    zval params[] = {NULL, NULL};
+    zval params[2];
     char addr[17] = {'\0'};
-    ZVAL_NULL(&retval);
     ZVAL_LONG(&params[0], status);
     ZVAL_NULL(&params[1]);
     if(status == 0){
@@ -19,9 +18,9 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct 
         uv_freeaddrinfo(res);
     }
     call_user_function(CG(function_table), NULL, &info->callback, &retval, 2, params);
-    zval_ptr_dtor(&params[0]);
-    zval_ptr_dtor(&params[1]);
-    zval_ptr_dtor(&retval);
+    zval_dtor(&params[0]);
+    zval_dtor(&params[1]);
+    zval_dtor(&retval);
     RELEASE_INFO(info);
 }
 
@@ -37,10 +36,10 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
         ZVAL_STRING(&params[2], service);
     }
     call_user_function(CG(function_table), NULL, &info->callback, &retval, 3, params);
-    zval_ptr_dtor(&params[0]);
-    zval_ptr_dtor(&params[1]);
-    zval_ptr_dtor(&params[2]);
-    zval_ptr_dtor(&retval);
+    zval_dtor(&params[0]);
+    zval_dtor(&params[1]);
+    zval_dtor(&params[2]);
+    zval_dtor(&retval);
     RELEASE_INFO(info);
 }
 

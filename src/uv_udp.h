@@ -33,7 +33,7 @@ typedef struct uv_udp_ext_s{
     uint flag;
     char *sockAddr;
     int sockPort;    
-    zval *object;
+    zval object;
     zend_object zo;    
 } uv_udp_ext_t;
 

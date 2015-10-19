@@ -11,8 +11,8 @@
     Z_ADDREF_P(o)
     
 #define RELEASE_INFO(info) \
-    Z_DELREF_P(&info->callback); \
-    Z_DELREF_P(&info->object); \
+    zval_dtor(&info->callback); \
+    zval_dtor(&info->object); \
     efree(info)
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVResolver, __construct), 0)

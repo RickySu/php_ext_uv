@@ -2,7 +2,7 @@
 
 CLASS_ENTRY_FUNCTION_D(UVIdle){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVIdle, createUVIdleResource);
-    OBJECT_HANDLER(UVIdle).offset = XtOffsetOf(uv_idle_ext_t, zo);;
+    OBJECT_HANDLER(UVIdle).offset = XtOffsetOf(uv_idle_ext_t, zo);
     OBJECT_HANDLER(UVIdle).clone_obj = NULL;
     OBJECT_HANDLER(UVIdle).free_obj = freeUVIdleResource;
     zend_declare_property_null(CLASS_ENTRY(UVIdle), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
@@ -15,7 +15,7 @@ static void idle_handle_callback(uv_idle_ext_t *idle_handle){
     ZVAL_NULL(&retval);
     idle_cb = zend_read_property(CLASS_ENTRY(UVIdle), &idle_handle->object, ZEND_STRL("callback"), 0, &rv);
     call_user_function(CG(function_table), NULL, idle_cb, &retval, 1, &idle_handle->object);
-    zval_ptr_dtor(&retval);
+    zval_dtor(&retval);
 }
 
 static zend_object *createUVIdleResource(zend_class_entry *ce) {
@@ -82,7 +82,7 @@ PHP_METHOD(UVIdle, start){
         zend_update_property(CLASS_ENTRY(UVIdle), self, ZEND_STRL("callback"), idle_cb);
         resource->start = 1;
         resource->object = *self;
-        Z_ADDREF_P(&resource->object);
+        Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);
 }

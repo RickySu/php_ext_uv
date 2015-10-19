@@ -2,6 +2,7 @@
 
 CLASS_ENTRY_FUNCTION_D(UVUdp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVUdp, createUVUdpResource);
+    OBJECT_HANDLER(UVUdp).offset = XtOffsetOf(uv_udp_ext_t, zo);;
     OBJECT_HANDLER(UVUdp).clone_obj = NULL;
     OBJECT_HANDLER(UVUdp).free_obj = freeUVUdpResource;
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
@@ -24,7 +25,7 @@ static void release(uv_udp_ext_t *resource){
 
     if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
-        Z_DELREF_P(resource->object);
+        zval_dtor(&resource->object);
     }
 
     if(resource->sockPort != 0){
@@ -42,23 +43,21 @@ static void send_cb(uv_udp_send_t* sr, int status) {
     send_req_t *req = (send_req_t *) sr;
     uv_udp_ext_t *resource = (uv_udp_ext_t *) sr->handle;
     zval retval, rv;
-    zval *params[] = {resource->object, NULL, NULL, NULL};
+    zval params[4];
     zval *send_cb;
-    send_cb = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("sendCallback"), 1, &rv);
+    params[0] = resource->object;
+    send_cb = zend_read_property(CLASS_ENTRY(UVUdp), &resource->object, ZEND_STRL("sendCallback"), 1, &rv);
     
-    if(IS_NULL != Z_TYPE_P(send_cb)){    
-        MAKE_STD_ZVAL(params[1]);
-        ZVAL_STRING(params[1], sock_addr((struct sockaddr *) &req->addr));
-        MAKE_STD_ZVAL(params[2]);
-        ZVAL_LONG(params[2], sock_port((struct sockaddr *) &req->addr));
-        MAKE_STD_ZVAL(params[3]);
-        ZVAL_LONG(params[3], status);
+    if(!Z_ISNULL_P(send_cb)){    
+        ZVAL_STRING(&params[1], sock_addr((struct sockaddr *) &req->addr));
+        ZVAL_LONG(&params[2], sock_port((struct sockaddr *) &req->addr));
+        ZVAL_LONG(&params[3], status);
     
-        call_user_function(CG(function_table), NULL, send_cb, &retval, 4, *params);
-    
-        zval_ptr_dtor(params[1]);
-        zval_ptr_dtor(params[2]);
-        zval_ptr_dtor(params[3]);
+        call_user_function(CG(function_table), NULL, send_cb, &retval, 4, params);
+
+        zval_dtor(&params[1]);
+        zval_dtor(&params[2]);
+        zval_dtor(&params[3]);
         zval_dtor(&retval);
     }
     efree(req->buf.base);
@@ -72,42 +71,36 @@ static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
 
 static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, const struct sockaddr* addr, unsigned int flags) {
     zval *recvCallback, *errorCallback;
-    zval *params[] = {resource->object, NULL, NULL, NULL, NULL};
+    zval params[5];
     zval retval, rv;
-    recvCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("recvCallback"), 1, &rv);
-    errorCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("errorCallback"), 1, &rv);    
+    params[0] = resource->object;
+    recvCallback = zend_read_property(CLASS_ENTRY(UVUdp), &resource->object, ZEND_STRL("recvCallback"), 1, &rv);
+    errorCallback = zend_read_property(CLASS_ENTRY(UVUdp), &resource->object, ZEND_STRL("errorCallback"), 1, &rv);    
     if(nread > 0){
-        if(IS_NULL != Z_TYPE_P(recvCallback)){
-            MAKE_STD_ZVAL(params[1]);
-            ZVAL_STRING(params[1], sock_addr((struct sockaddr *) addr));
-            MAKE_STD_ZVAL(params[2]);
-            ZVAL_LONG(params[2], sock_port((struct sockaddr *) addr));
-            MAKE_STD_ZVAL(params[3]);
-            ZVAL_STRINGL(params[3], buf->base, nread);
-            
-            MAKE_STD_ZVAL(params[4]);
-            ZVAL_LONG(params[4], flags);
+        if(!Z_ISNULL_P(recvCallback)){
+            ZVAL_STRING(&params[1], sock_addr((struct sockaddr *) addr));
+            ZVAL_LONG(&params[2], sock_port((struct sockaddr *) addr));
+            ZVAL_STRINGL(&params[3], buf->base, nread);
+            ZVAL_LONG(&params[4], flags);
     
-            call_user_function(CG(function_table), NULL, recvCallback, &retval, 5, *params);
+            call_user_function(CG(function_table), NULL, recvCallback, &retval, 5, params);
     
-            zval_ptr_dtor(params[1]);
-            zval_ptr_dtor(params[2]);
-            zval_ptr_dtor(params[3]);
-            zval_ptr_dtor(params[4]);
+            zval_dtor(&params[1]);
+            zval_dtor(&params[2]);
+            zval_dtor(&params[3]);
+            zval_dtor(&params[4]);
             zval_dtor(&retval);
         }    
     }
     else{
-        if(IS_NULL != Z_TYPE_P(errorCallback)){
-            MAKE_STD_ZVAL(params[1]);
-            ZVAL_LONG(params[1], nread);
-            MAKE_STD_ZVAL(params[2]);
-            ZVAL_LONG(params[2], flags);
+        if(!Z_ISNULL_P(errorCallback)){
+            ZVAL_LONG(&params[1], nread);
+            ZVAL_LONG(&params[2], flags);
     
-            call_user_function(CG(function_table), NULL, errorCallback, &retval, 3, *params);
+            call_user_function(CG(function_table), NULL, errorCallback, &retval, 3, params);
     
-            zval_ptr_dtor(params[1]);
-            zval_ptr_dtor(params[2]);
+            zval_dtor(&params[1]);
+            zval_dtor(&params[2]);
             zval_dtor(&retval);
         }
     }
@@ -194,8 +187,8 @@ PHP_METHOD(UVUdp, getSockport){
 PHP_METHOD(UVUdp, bind){
     long ret, port;
     zval *self = getThis();
-    const char *host;
-    int host_len;
+    const char *host = NULL;
+    size_t host_len;
     char cstr_host[30];
     struct sockaddr_in addr;
     
@@ -252,16 +245,17 @@ PHP_METHOD(UVUdp, setCallback){
         zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("recvCallback"), onRecvCallback);
         zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("sendCallback"), onSendCallback);
         zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("errorCallback"), onErrorCallback);
-        resource->object = self;
+        resource->object = *self;
         resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
-        Z_ADDREF_P(resource->object);
+        Z_ADDREF(resource->object);
     }
      RETURN_LONG(ret);
 }
 
 PHP_METHOD(UVUdp, sendTo){
-    char *dest, *message, cstr_dest[30];
-    int dest_len, message_len;
+    char *dest = NULL, *message = NULL;
+    char cstr_dest[30];
+    size_t dest_len, message_len;
     long port, ret;
     send_req_t *req;
     zval *self = getThis();

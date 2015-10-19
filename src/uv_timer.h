@@ -16,7 +16,7 @@ ZEND_END_ARG_INFO()
 typedef struct uv_signal_ext_s{
     uv_timer_t uv_timer;
     int start;
-    zval *object;
+    zval object;
     zend_object zo;    
 } uv_timer_ext_t;
 

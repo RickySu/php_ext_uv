@@ -13,13 +13,13 @@ void setSelfReference(uv_tcp_ext_t *resource)
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         return;
     }
-    Z_ADDREF_P(&resource->object);
+    Z_ADDREF(resource->object);
     resource->flag |= UV_TCP_HANDLE_INTERNAL_REF;
 }
 
 CLASS_ENTRY_FUNCTION_D(UVTcp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTcp, createUVTcpResource);
-    OBJECT_HANDLER(UVTcp).offset = XtOffsetOf(uv_tcp_ext_t, zo);;
+    OBJECT_HANDLER(UVTcp).offset = XtOffsetOf(uv_tcp_ext_t, zo);
     OBJECT_HANDLER(UVTcp).clone_obj = NULL;
     OBJECT_HANDLER(UVTcp).free_obj = freeUVTcpResource;
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);

@@ -2,6 +2,7 @@
 
 CLASS_ENTRY_FUNCTION_D(UVTimer){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTimer, createUVTimerResource);
+    OBJECT_HANDLER(UVTimer).offset = XtOffsetOf(uv_timer_ext_t, zo);
     OBJECT_HANDLER(UVTimer).clone_obj = NULL;
     OBJECT_HANDLER(UVTimer).free_obj = freeUVTimerResource;
     zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
@@ -11,9 +12,8 @@ CLASS_ENTRY_FUNCTION_D(UVTimer){
 static void timer_handle_callback(uv_timer_ext_t *timer_handle){
     zval *timer_cb;
     zval retval, rv;
-    ZVAL_NULL(&retval);
-    timer_cb = zend_read_property(CLASS_ENTRY(UVTimer), timer_handle->object, ZEND_STRL("callback"), 1, &rv);
-    call_user_function(CG(function_table), NULL, timer_cb, &retval, 1, timer_handle->object);
+    timer_cb = zend_read_property(CLASS_ENTRY(UVTimer), &timer_handle->object, ZEND_STRL("callback"), 1, &rv);
+    call_user_function(CG(function_table), NULL, timer_cb, &retval, 1, &timer_handle->object);
     zval_dtor(&retval);
 }
 
@@ -79,8 +79,8 @@ PHP_METHOD(UVTimer, start){
     if(ret == 0){
         zend_update_property(CLASS_ENTRY(UVTimer), self, ZEND_STRL("callback"), timer_cb);
         resource->start = 1;
-        resource->object = self;
-        Z_ADDREF_P(resource->object);
+        resource->object = *self;
+        Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);
 }
@@ -97,7 +97,7 @@ PHP_METHOD(UVTimer, stop){
     ret = uv_timer_stop((uv_timer_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF_P(resource->object);
+        Z_DELREF(resource->object);
     }
     RETURN_LONG(ret);
 }
