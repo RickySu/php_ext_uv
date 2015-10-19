@@ -11,6 +11,7 @@ CLASS_ENTRY_FUNCTION_D(UVSSL){
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1_1);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1_2);
+    SSL_library_init();
 }
 
 
@@ -323,27 +324,28 @@ PHP_METHOD(UVSSL, __construct){
         uv_tcp_init(uv_default_loop(), (uv_tcp_t *) resource);
     }
     else{
-        if(!check_zval_type(CLASS_ENTRY(UVSSL), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC)){
-            return;
-        }
         zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop TSRMLS_CC);
         uv_tcp_init(FETCH_UV_LOOP(), (uv_tcp_t *) resource);
     }
 
     switch(sslMethod){
-        case SSL_METHOD_SSLV2:
-#ifdef OPENSSL_NO_SSL2
-            resource->ssl_method = SSLv3_method();
-#else
-            resource->ssl_method = SSLv2_method();
-#endif
-            break;
-        case SSL_METHOD_SSLV3:
-            resource->ssl_method = SSLv3_method();
-            break;
         case SSL_METHOD_SSLV23:
             resource->ssl_method = SSLv23_method();
             break;
+        case SSL_METHOD_SSLV2:
+#ifndef OPENSSL_NO_SSL2
+            resource->ssl_method = SSLv2_method();
+#else
+    #ifndef OPENSSL_NO_SSL3_METHOD
+            resource->ssl_method = SSLv3_method();
+    #endif
+#endif
+            break;
+        case SSL_METHOD_SSLV3:
+#ifndef OPENSSL_NO_SSL3_METHOD
+            resource->ssl_method = SSLv3_method();
+            break;
+#endif
         case SSL_METHOD_TLSV1:
             resource->ssl_method = TLSv1_method();
             break;

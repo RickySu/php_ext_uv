@@ -62,10 +62,6 @@ PHP_METHOD(UVTimer, __construct){
         return;
     }
     
-    if(!check_zval_type(CLASS_ENTRY(UVTimer), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop TSRMLS_CC)){
-        return;
-    }
-    
     zend_update_property(CLASS_ENTRY(UVTimer), self, ZEND_STRL("loop"), loop TSRMLS_CC);
     uv_timer_init(FETCH_UV_LOOP(), (uv_timer_t *) resource);
 }

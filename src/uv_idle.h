@@ -4,8 +4,8 @@
 #include "uv_loop_resource.h"
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVIdle, __construct), 0)
-    ZEND_ARG_INFO(0, loop)
-    ZEND_END_ARG_INFO()
+    ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)
+ZEND_END_ARG_INFO()
     
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVIdle, start), 0)
     ZEND_ARG_INFO(0, idle_cb)

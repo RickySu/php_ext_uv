@@ -11,7 +11,7 @@
 #define SSL_METHOD_TLSV1_2 5
 
 ZEND_BEGIN_ARG_INFO_EX(ARGINFO(UVSSL, __construct), 0, 0, 1)
-    ZEND_ARG_INFO(0, loop)
+    ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)
     ZEND_ARG_INFO(0, sslMethod)
     ZEND_ARG_INFO(0, nContexts)
 ZEND_END_ARG_INFO()

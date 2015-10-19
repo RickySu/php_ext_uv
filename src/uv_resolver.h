@@ -16,8 +16,8 @@
     efree(info)
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVResolver, __construct), 0)
-    ZEND_ARG_INFO(0, loop)
-    ZEND_END_ARG_INFO()
+    ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)
+ZEND_END_ARG_INFO()
     
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVResolver, getaddrinfo), 0)
     ZEND_ARG_INFO(0, node)
