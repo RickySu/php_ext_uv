@@ -16,7 +16,7 @@ function createSSLSocketClient($host, $port){
         ),
     );
     $sslContext = stream_context_create($contextOptions);
-    $fp = stream_socket_client("ssl://$host:$port", $errno, $errstr, ini_get("default_socket_timeout"), STREAM_CLIENT_CONNECT, $sslContext);
+    $fp = stream_socket_client("ssl://localhost:$port", $errno, $errstr, ini_get("default_socket_timeout"), STREAM_CLIENT_CONNECT, $sslContext);
     return $fp;
 }
 if($pid){

@@ -10,7 +10,7 @@
 #define UV_TCP_WRITE_CALLBACK_ENABLE (1<<4)
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, __construct), 0)
-    ZEND_ARG_INFO(0, loop)
+    ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVTcp, setCallback), 0)

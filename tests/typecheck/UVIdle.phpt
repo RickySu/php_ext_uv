@@ -4,7 +4,6 @@ Check for UVIdle
 <?php
 $class = 'UVIdle';
 include('error_handler.php');
-$idle = new UVIdle(new stdClass());
 ?>
 --EXPECT--
 UVIdle ok

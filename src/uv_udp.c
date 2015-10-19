@@ -156,10 +156,6 @@ PHP_METHOD(UVUdp, __construct){
         return;
     }
 
-    if(!check_zval_type(CLASS_ENTRY(UVUdp), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop)){
-        return;
-    }
-    
     zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("loop"), loop);
     uv_udp_init(FETCH_UV_LOOP(), (uv_udp_t *) resource);
 }

@@ -379,10 +379,6 @@ PHP_METHOD(UVTcp, __construct){
         return;
     }
     
-    if(!check_zval_type(CLASS_ENTRY(UVTcp), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop)){
-        return;
-    }
-    
     zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop);
     uv_tcp_init(FETCH_UV_LOOP(), (uv_tcp_t *) resource);
 }

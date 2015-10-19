@@ -55,10 +55,6 @@ PHP_METHOD(UVIdle, __construct){
         return;
     }
 
-    if(!check_zval_type(CLASS_ENTRY(UVIdle), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop))
-    {
-        return;
-    }
     zend_update_property(CLASS_ENTRY(UVIdle), self, ZEND_STRL("loop"), loop);
     uv_idle_init(FETCH_UV_LOOP(), (uv_idle_t *) resource);
 }

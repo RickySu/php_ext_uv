@@ -59,10 +59,6 @@ PHP_METHOD(UVSignal, __construct){
         return;
     }
     
-    if(!check_zval_type(CLASS_ENTRY(UVSignal), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop)){
-        return;
-    }
-    
     zend_update_property(CLASS_ENTRY(UVSignal), self, ZEND_STRL("loop"), loop);
     uv_signal_init(FETCH_UV_LOOP(), (uv_signal_t *) resource);
                                                                                       

@@ -54,10 +54,6 @@ PHP_METHOD(UVResolver, __construct){
     if(NULL == loop || ZVAL_IS_NULL(loop)){
         return;
     }
-
-    if(!check_zval_type(CLASS_ENTRY(UVResolver), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop)){
-        return;
-    }
     
     zend_update_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), loop);                                                                                      
 }

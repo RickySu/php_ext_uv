@@ -302,12 +302,9 @@ PHP_METHOD(UVSSL, __construct){
     resource->uv_tcp_ext.object = *self;
 
     if(NULL == loop || Z_ISNULL_P(loop)){
-        uv_tcp_init(uv_default_loop(), (uv_tcp_t *) resource);
+        uv_tcp_init(uv_default_loop(), (uv_tcp_t *) &resource->uv_tcp_ext);
     }
     else{
-        if(!check_zval_type(CLASS_ENTRY(UVSSL), ZEND_STRL("__construct") + 1, CLASS_ENTRY(UVLoop), loop)){
-            return;
-        }
         zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("loop"), loop);
         uv_tcp_init(FETCH_UV_LOOP(), (uv_tcp_t *) &resource->uv_tcp_ext);
     }

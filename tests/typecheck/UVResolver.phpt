@@ -4,7 +4,6 @@ Check for UVResolver
 <?php
 $class = 'UVResolver';
 include('error_handler.php');
-$idle = new UVResolver(new stdClass());
 ?>
 --EXPECT--
 UVResolver ok
