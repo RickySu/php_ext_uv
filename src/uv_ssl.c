@@ -13,6 +13,7 @@ CLASS_ENTRY_FUNCTION_D(UVSSL){
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1_1);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1_2);
+    SSL_library_init();
 }
 
 
@@ -310,19 +311,23 @@ PHP_METHOD(UVSSL, __construct){
     }
 
     switch(sslMethod){
-        case SSL_METHOD_SSLV2:
-#ifdef OPENSSL_NO_SSL2
-            resource->ssl_method = SSLv3_method();
-#else
-            resource->ssl_method = SSLv2_method();
-#endif
-            break;
-        case SSL_METHOD_SSLV3:
-            resource->ssl_method = SSLv3_method();
-            break;
         case SSL_METHOD_SSLV23:
             resource->ssl_method = SSLv23_method();
             break;
+        case SSL_METHOD_SSLV2:
+#ifndef OPENSSL_NO_SSL2
+            resource->ssl_method = SSLv2_method();
+#else
+    #ifndef OPENSSL_NO_SSL3_METHOD
+            resource->ssl_method = SSLv3_method();
+    #endif
+#endif
+            break;
+        case SSL_METHOD_SSLV3:
+#ifndef OPENSSL_NO_SSL3_METHOD
+            resource->ssl_method = SSLv3_method();
+            break;
+#endif
         case SSL_METHOD_TLSV1:
             resource->ssl_method = TLSv1_method();
             break;
