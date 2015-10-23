@@ -1,7 +1,8 @@
 #ifndef _UV_SSL_H
 #define _UV_SSL_H
-#include <openssl/ssl.h>
 #include "uv_tcp.h"
+#include "ssl_verify.h"
+#include "uv_ssl_constant.h"
 
 #define SSL_METHOD_SSLV2 0
 #define SSL_METHOD_SSLV3 1

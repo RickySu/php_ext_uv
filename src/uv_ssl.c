@@ -5,15 +5,18 @@ CLASS_ENTRY_FUNCTION_D(UVSSL){
     OBJECT_HANDLER(UVSSL).clone_obj = NULL;
     zend_declare_property_null(CLASS_ENTRY(UVSSL), ZEND_STRL("sslServerNameCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
     zend_declare_property_null(CLASS_ENTRY(UVSSL), ZEND_STRL("sslHandshakeCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
+    
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV2);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV3);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV23);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1_1);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_TLSV1_2);
+
+    REGISTER_UV_SSL_X509_CONSTANT();
+    
     SSL_library_init();
 }
-
 
 static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     buf->base = emalloc(suggested_size);
