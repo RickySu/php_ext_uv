@@ -28,8 +28,7 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("shutdownCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
-
-static void release(uv_tcp_ext_t *resource){
+void releaseResource(uv_tcp_ext_t *resource){
 
     if(resource->flag & UV_TCP_READ_START){
         resource->flag &= ~UV_TCP_READ_START;
@@ -81,7 +80,7 @@ static void shutdown_cb(uv_shutdown_t* req, int status) {
 }
 
 static void tcp_close_cb(uv_handle_t* handle) {
-    release((uv_tcp_ext_t *) handle);
+    releaseResource((uv_tcp_ext_t *) handle);
 }
 
 static void write_cb(uv_write_t *wr, int status){
@@ -205,7 +204,7 @@ void freeUVTcpResource(void *object TSRMLS_DC) {
     uv_tcp_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_tcp_ext_t);
     
-    release(resource);
+    releaseResource(resource);
     
     zend_object_std_dtor(&resource->zo TSRMLS_CC);
     efree(resource);

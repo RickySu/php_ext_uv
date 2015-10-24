@@ -65,6 +65,7 @@ zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *clien
 static void tcp_close_cb(uv_handle_t* handle);
 void tcp_close_socket(uv_tcp_ext_t *handle);
 void setSelfReference(uv_tcp_ext_t *resource);
+void releaseResource(uv_tcp_ext_t *resource);
 
 PHP_METHOD(UVTcp, getSockname);
 PHP_METHOD(UVTcp, getSockport);

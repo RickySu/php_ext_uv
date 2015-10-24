@@ -10,6 +10,7 @@
 #define SSL_METHOD_TLSV1 3
 #define SSL_METHOD_TLSV1_1 4
 #define SSL_METHOD_TLSV1_2 5
+#define OPENSSL_DEFAULT_STREAM_VERIFY_DEPTH 9
 
 ZEND_BEGIN_ARG_INFO_EX(ARGINFO(UVSSL, __construct), 0, 0, 1)
     ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)
@@ -53,7 +54,15 @@ typedef struct uv_ssl_ext_s{
     SSL* ssl;
     BIO* read_bio;
     BIO* write_bio;
+    char *sniConnectHostname;
+    int clientMode;
 } uv_ssl_ext_t;
+
+typedef struct uv_getaddrinfo_ext_s{
+    uv_getaddrinfo_t addrinfo;
+    int port;
+    uv_ssl_ext_t *ssl_handle;
+} uv_getaddrinfo_ext_t;
 
 static zend_object_value createUVSSLResource(zend_class_entry *class_type TSRMLS_DC);
 void freeUVSSLResource(void *object TSRMLS_DC);
