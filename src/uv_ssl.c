@@ -98,7 +98,7 @@ zend_always_inline int handleHandshake(uv_ssl_ext_t *resource, ssize_t nread, co
             if(!matches_common_name(peer_cert, resource->sniConnectHostname) && !matches_san_list(peer_cert, resource->sniConnectHostname)){
                 if(!handleHandshakeCallback(callback, resource, X509_V_ERR_SUBJECT_ISSUER_MISMATCH)){
                     X509_free(peer_cert);
-                    tcp_close_socket((uv_tcp_ext_t *) resource);
+                    //tcp_close_socket((uv_tcp_ext_t *) resource);
                     return 0;
                 }
             }
