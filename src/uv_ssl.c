@@ -58,7 +58,6 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
     if(depth > OPENSSL_DEFAULT_STREAM_VERIFY_DEPTH){
         err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
     }    
-    
     return handleHandshakeCallback(callback, resource, err TSRMLS_CC);
 }
 
@@ -89,20 +88,24 @@ zend_always_inline int handleHandshake(uv_ssl_ext_t *resource, ssize_t nread, co
                 write_bio_to_socket(resource);
                 return 0;
             default:
+                tcp_close_socket((uv_tcp_ext_t *) resource);
                 return 0;
         }
     }
 
-    err = X509_V_OK;
     if(resource->clientMode){
         if(peer_cert = SSL_get_peer_certificate(resource->ssl)){
             if(!matches_common_name(peer_cert, resource->sniConnectHostname) && !matches_san_list(peer_cert, resource->sniConnectHostname)){
-                err = X509_V_ERR_SUBJECT_ISSUER_MISMATCH;
+                if(!handleHandshakeCallback(callback, resource, X509_V_ERR_SUBJECT_ISSUER_MISMATCH)){
+                    X509_free(peer_cert);
+                    tcp_close_socket((uv_tcp_ext_t *) resource);
+                    return 0;
+                }
             }
             X509_free(peer_cert);
         }
     }
-    return handleHandshakeCallback(callback, resource, err);
+    return handleHandshakeCallback(callback, resource, X509_V_OK);
 }
 
 static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) {
@@ -115,7 +118,7 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
     zval retval;
     char read_buf[256];
     int size, read_buf_index = 0;
-    
+
     if(nread<0){
         if(!ZVAL_IS_NULL(errorCallback)){
             ZVAL_NULL(&retval);
@@ -136,6 +139,7 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
         efree(buf->base);
         return;
     }
+
     while(1){
         size = SSL_read(resource->ssl, &read_buf[read_buf_index], sizeof(read_buf) - read_buf_index);
         if(size > 0){
@@ -156,7 +160,6 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             break;
         }
     }
-    
     efree(buf->base);
 }
 
@@ -197,9 +200,11 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     ZVAL_LONG(params[1], status);
     zval *callback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("connectCallback"), 0 TSRMLS_CC);
 
+
     SSL_CTX_set_verify(resource->ctx[0], SSL_VERIFY_PEER, verify_callback);
     SSL_CTX_set_default_verify_paths(resource->ctx[0]);
     SSL_CTX_set_cipher_list(resource->ctx[0], "DEFAULT");
+
 
     if(uv_read_start((uv_stream_t *) resource, alloc_cb, (uv_read_cb) read_cb)){
         return;
