@@ -96,7 +96,7 @@ zend_always_inline int handleHandshake(uv_ssl_ext_t *resource, ssize_t nread, co
     if(resource->clientMode){
         if(peer_cert = SSL_get_peer_certificate(resource->ssl)){
             if(!matches_common_name(peer_cert, resource->sniConnectHostname) && !matches_san_list(peer_cert, resource->sniConnectHostname)){
-                if(!handleHandshakeCallback(callback, resource, X509_V_ERR_SUBJECT_ISSUER_MISMATCH)){
+                if(!handleHandshakeCallback(callback, resource, X509_V_ERR_SUBJECT_ISSUER_MISMATCH TSRMLS_CC)){
                     X509_free(peer_cert);
                     //tcp_close_socket((uv_tcp_ext_t *) resource);
                     return 0;
@@ -105,7 +105,7 @@ zend_always_inline int handleHandshake(uv_ssl_ext_t *resource, ssize_t nread, co
             X509_free(peer_cert);
         }
     }
-    return handleHandshakeCallback(callback, resource, X509_V_OK);
+    return handleHandshakeCallback(callback, resource, X509_V_OK TSRMLS_CC);
 }
 
 static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) {
@@ -135,7 +135,7 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
     
     BIO_write(resource->read_bio, buf->base, nread);
     
-    if(!handleHandshake(resource, nread, buf)){
+    if(!handleHandshake(resource, nread, buf TSRMLS_CC)){
         efree(buf->base);
         return;
     }
@@ -231,6 +231,7 @@ static void client_connection_cb(uv_connect_t* req, int status) {
 }
 
 static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *addrinfo, int status, struct addrinfo *res) {
+    TSRMLS_FETCH();
     int ret;
     struct sockaddr_in addr;
     uv_ssl_ext_t *resource = addrinfo->ssl_handle;
