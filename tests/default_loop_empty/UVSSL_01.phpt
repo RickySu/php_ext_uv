@@ -13,6 +13,7 @@ function createSSLSocketClient($host, $port){
     $contextOptions = array(
         'ssl' => array(
             'verify_peer'   => false,
+            'verify_peer_name' => false,
         ),
     );
     $sslContext = stream_context_create($contextOptions);
