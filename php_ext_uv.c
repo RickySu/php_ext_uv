@@ -36,6 +36,7 @@ PHP_MINIT_FUNCTION(php_ext_uv) {
     CLASS_ENTRY_FUNCTION_C(UVSSL);
 #endif
     CLASS_ENTRY_FUNCTION_C(UVResolver);
+    CLASS_ENTRY_FUNCTION_C(UVUtil);
     return SUCCESS;
 }
 

@@ -5,16 +5,16 @@ Check for UVResolver
 $result = array();
 $loop = UVLoop::defaultLoop();
 $resolver = new UVResolver($loop);
-$resolver->getnameinfo('198.41.0.4', function($status, $host, $service) use(&$result){
-    $result['198.41.0.4'] = "$status $host $service";
+$resolver->getnameinfo('127.0.0.1', function($status, $host, $service) use(&$result){
+    $result['127.0.0.1'] = "$status $host $service";
 });
-$resolver->getaddrinfo('a.root-servers.net', null, function($status, $host) use(&$result){
-    $result['a.root-servers.net'] = "$status $host";
+$resolver->getaddrinfo('localhost', null, function($status, $host) use(&$result){
+    $result['localhost'] = "$status $host";
 });
 $loop->run();
-echo "{$result['198.41.0.4']}\n";
-echo "{$result['a.root-servers.net']}\n";
+echo "{$result['127.0.0.1']}\n";
+echo "{$result['localhost']}\n";
 ?>
 --EXPECT--
-0 a.root-servers.net 0
-0 198.41.0.4
+0 localhost 0
+0 127.0.0.1

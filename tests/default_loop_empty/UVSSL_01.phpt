@@ -13,10 +13,11 @@ function createSSLSocketClient($host, $port){
     $contextOptions = array(
         'ssl' => array(
             'verify_peer'   => false,
+            'verify_peer_name' => false,
         ),
     );
     $sslContext = stream_context_create($contextOptions);
-    $fp = stream_socket_client("ssl://localhost:$port", $errno, $errstr, ini_get("default_socket_timeout"), STREAM_CLIENT_CONNECT, $sslContext);
+    $fp = stream_socket_client("ssl://$host:$port", $errno, $errstr, ini_get("default_socket_timeout"), STREAM_CLIENT_CONNECT, $sslContext);
     return $fp;
 }
 if($pid){
@@ -50,11 +51,12 @@ $server->clientCloseTriggered = false;
 Equal(0, $server->listen($host, $port, function($server) {
 
     $client = $server->accept();
-    $client->setSSLHandshakeCallback(function($client) use($server){
+    $client->setSSLHandshakeCallback(function($client, $status) use($server){
         if($server->clientCloseTriggered){
             $client->write("client closed");
             $server->clientCloseTriggered = false;
-        }    
+        }
+        return true;
     });
     $client->setCallback(function($client, $recv) use($server){
         $client->write($recv);    
