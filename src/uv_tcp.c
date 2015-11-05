@@ -178,7 +178,7 @@ static void connection_cb(uv_tcp_ext_t *resource, int status) {
 
 static zend_object *createUVTcpResource(zend_class_entry *ce) {
     uv_tcp_ext_t *resource;
-    resource = resource = ALLOC_RESOURCE(uv_tcp_ext_t);
+    resource = ALLOC_RESOURCE(uv_tcp_ext_t);
 
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);

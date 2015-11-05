@@ -24,7 +24,7 @@ static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
 
 static zend_object *createUVSignalResource(zend_class_entry *ce) {
     uv_signal_ext_t *resource;
-    resource = resource = ALLOC_RESOURCE(uv_signal_ext_t);;
+    resource = ALLOC_RESOURCE(uv_signal_ext_t);
 
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
