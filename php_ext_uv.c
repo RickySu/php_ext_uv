@@ -8,7 +8,7 @@ zend_module_entry php_ext_uv_module_entry = {
 #if ZEND_MODULE_API_NO >= 20010901
     STANDARD_MODULE_HEADER,
 #endif
-    "libuv Module",
+    "php_ext_uv",
     NULL,
     PHP_MINIT(php_ext_uv),
     PHP_MSHUTDOWN(php_ext_uv),
