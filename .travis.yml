@@ -11,6 +11,10 @@ compiler:
     - gcc
 
 before_script:
-    - ./.travis.scripts/compile.sh
+    - git submodule update --init
 script:
+    - phpize
+    - ./configure
+    - make thirdparty/build/lib/libuv.a
+    - make all
     - echo "n" | make test
