@@ -21,8 +21,7 @@ static void timer_handle_callback(uv_timer_ext_t *timer_handle){
 static zend_object_value createUVTimerResource(zend_class_entry *ce TSRMLS_DC) {
     zend_object_value retval;
     uv_timer_ext_t *resource;
-    resource = (uv_timer_ext_t *) emalloc(sizeof(uv_timer_ext_t));
-    memset(resource, 0, sizeof(uv_timer_ext_t));
+    resource = (uv_timer_ext_t *) ecalloc(1, sizeof(uv_timer_ext_t));
 
     zend_object_std_init(&resource->zo, ce TSRMLS_CC);
     object_properties_init(&resource->zo, ce);
@@ -41,6 +40,7 @@ void freeUVTimerResource(void *object TSRMLS_DC) {
     uv_timer_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_timer_ext_t);
     if(resource->start){
+        zval_ptr_dtor(&resource->object);
         uv_timer_stop((uv_timer_t *) resource);
     }
     uv_unref((uv_handle_t *) resource);
@@ -102,7 +102,7 @@ PHP_METHOD(UVTimer, stop){
     ret = uv_timer_stop((uv_timer_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF_P(resource->object);
+        zval_ptr_dtor(&resource->object);
     }
     RETURN_LONG(ret);
 }

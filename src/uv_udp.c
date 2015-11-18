@@ -10,9 +10,8 @@ CLASS_ENTRY_FUNCTION_D(UVUdp){
 }
 
 static void release(uv_udp_ext_t *resource){
-
     if(resource->flag & UV_UDP_READ_START){
-        resource->flag &= UV_UDP_READ_START;
+        resource->flag &= ~UV_UDP_READ_START;
         uv_udp_recv_stop(&resource->uv_udp);
     }
     
@@ -23,7 +22,7 @@ static void release(uv_udp_ext_t *resource){
 
     if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
-        Z_DELREF_P(resource->object);
+        zval_ptr_dtor(&resource->object);
     }
 
     if(resource->sockPort != 0){
@@ -48,7 +47,7 @@ static void send_cb(uv_udp_send_t* sr, int status) {
     
     if(IS_NULL != Z_TYPE_P(send_cb)){    
         MAKE_STD_ZVAL(params[1]);
-        ZVAL_STRING(params[1], sock_addr((struct sockaddr *) &req->addr), 1);
+        ZVAL_STRING(params[1], sock_addr((struct sockaddr *) &req->addr), 0);
         MAKE_STD_ZVAL(params[2]);
         ZVAL_LONG(params[2], sock_port((struct sockaddr *) &req->addr));
         MAKE_STD_ZVAL(params[3]);
@@ -75,14 +74,17 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
     zval *params[] = {resource->object, NULL, NULL, NULL, NULL};
     zval retval;
     TSRMLS_FETCH();
+
     recvCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("recvCallback"), 0 TSRMLS_CC);
     errorCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("errorCallback"), 0 TSRMLS_CC);    
+
     if(nread > 0){
         if(IS_NULL != Z_TYPE_P(recvCallback)){
             MAKE_STD_ZVAL(params[1]);
-            ZVAL_STRING(params[1], sock_addr((struct sockaddr *) addr), 1);
+            ZVAL_STRING(params[1], sock_addr((struct sockaddr *) addr), 0);
             MAKE_STD_ZVAL(params[2]);
             ZVAL_LONG(params[2], sock_port((struct sockaddr *) addr));
+
             MAKE_STD_ZVAL(params[3]);
             ZVAL_STRINGL(params[3], buf->base, nread, 1);
             
@@ -137,7 +139,6 @@ static zend_object_value createUVUdpResource(zend_class_entry *ce TSRMLS_DC) {
 void freeUVUdpResource(void *object TSRMLS_DC) {
     uv_udp_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_udp_ext_t);
-    
     release(resource);
     
     zend_object_std_dtor(&resource->zo TSRMLS_CC);

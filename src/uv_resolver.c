@@ -76,7 +76,7 @@ PHP_METHOD(UVResolver, getnameinfo){
     static struct sockaddr_in addr4;
     char cstr_addr[30];
     uv_getnameinfo_ext_t *info;
-    
+
     loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 0 TSRMLS_CC);
 
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &addr, &addr_len, &nameinfoCallback)) {
@@ -92,6 +92,7 @@ PHP_METHOD(UVResolver, getnameinfo){
     if (!zend_is_callable(nameinfoCallback, 0, NULL TSRMLS_CC)) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING, "param nameinfoCallback is not callable");
     }
+
     INIT_INFO(info, uv_getnameinfo_ext_t, self, nameinfoCallback);
 
     if((ret = uv_getnameinfo(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_getnameinfo_t *) info, (uv_getnameinfo_cb) on_nameinfo_resolved, (const struct sockaddr*) &addr4, 0)) != 0) {
