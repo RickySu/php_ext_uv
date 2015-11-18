@@ -16,4 +16,4 @@ script:
     - phpize
     - ./configure
     - make all
-    - echo "n" | make test
+    - NO_INTERACTION=1 make test
