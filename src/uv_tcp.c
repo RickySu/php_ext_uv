@@ -30,6 +30,18 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
 
 void releaseResource(uv_tcp_ext_t *resource){
 
+    if(resource->sockPort != 0){
+        resource->sockPort = 0;
+        efree(resource->sockAddr);
+        resource->sockAddr = NULL;
+    }
+
+    if(resource->peerPort != 0){
+        resource->peerPort = 0;
+        efree(resource->peerAddr);
+        resource->peerAddr = NULL;
+    }
+
     if(resource->flag & UV_TCP_READ_START){
         resource->flag &= ~UV_TCP_READ_START;
         uv_read_stop((uv_stream_t *) &resource->uv_tcp);
@@ -43,18 +55,6 @@ void releaseResource(uv_tcp_ext_t *resource){
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_TCP_HANDLE_INTERNAL_REF;
         zval_ptr_dtor(&resource->object);
-    }
-
-    if(resource->sockPort != 0){
-        resource->sockPort = 0;
-        efree(resource->sockAddr);
-        resource->sockAddr = NULL;
-    }
-
-    if(resource->peerPort != 0){
-        resource->peerPort = 0;
-        efree(resource->peerAddr);
-        resource->peerAddr = NULL;
     }
 
 }
@@ -203,9 +203,8 @@ static zend_object_value createUVTcpResource(zend_class_entry *ce TSRMLS_DC) {
 void freeUVTcpResource(void *object TSRMLS_DC) {
     uv_tcp_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_tcp_ext_t);
-    
+
     releaseResource(resource);
-    
     zend_object_std_dtor(&resource->zo TSRMLS_CC);
     efree(resource);
 }
@@ -370,7 +369,7 @@ PHP_METHOD(UVTcp, setCallback){
     zend_update_property(CLASS_ENTRY(UVTcp), self, ZEND_STRL("errorCallback"), onErrorCallback TSRMLS_CC);
     setSelfReference(resource);
 
-     RETURN_LONG(ret);
+    RETURN_LONG(ret);
 }
 
 PHP_METHOD(UVTcp, close){

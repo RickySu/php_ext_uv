@@ -45,6 +45,7 @@ void freeUVSignalResource(void *object TSRMLS_DC) {
     resource = FETCH_RESOURCE(object, uv_signal_ext_t);
     if(resource->start){
         uv_signal_stop((uv_signal_t *) resource);
+        zval_ptr_dtor(&resource->object);
     }
     
     uv_unref((uv_handle_t *) resource);
@@ -107,7 +108,7 @@ PHP_METHOD(UVSignal, stop){
     ret = uv_signal_stop((uv_signal_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF_P(resource->object);
+        zval_ptr_dtor(&resource->object);
     }
     RETURN_LONG(ret);
 }

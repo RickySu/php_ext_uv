@@ -20,15 +20,15 @@ static void release(uv_udp_ext_t *resource){
         uv_udp_recv_stop(&resource->uv_udp);
     }
 
-    if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
-        resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
-        zval_ptr_dtor(&resource->object);
-    }
-
     if(resource->sockPort != 0){
         resource->sockPort = 0;
         efree(resource->sockAddr);
         resource->sockAddr = NULL;
+    }
+    
+    if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
+        resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
+        zval_ptr_dtor(&resource->object);
     }
 }
 

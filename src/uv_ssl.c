@@ -36,7 +36,6 @@ zend_always_inline int handleHandshakeCallback(zval *callback, uv_ssl_ext_t *res
     if(retval == 0){
         tcp_close_socket(&resource->uv_tcp_ext);
     }
-    
     return retval;
 }
 
@@ -57,7 +56,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
     
     if(depth > OPENSSL_DEFAULT_STREAM_VERIFY_DEPTH){
         err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
-    }    
+    }
     return handleHandshakeCallback(callback, resource, err TSRMLS_CC);
 }
 
@@ -98,7 +97,6 @@ zend_always_inline int handleHandshake(uv_ssl_ext_t *resource, ssize_t nread, co
             if(!matches_common_name(peer_cert, resource->sniConnectHostname) && !matches_san_list(peer_cert, resource->sniConnectHostname)){
                 if(!handleHandshakeCallback(callback, resource, X509_V_ERR_SUBJECT_ISSUER_MISMATCH TSRMLS_CC)){
                     X509_free(peer_cert);
-                    //tcp_close_socket((uv_tcp_ext_t *) resource);
                     return 0;
                 }
             }
@@ -114,7 +112,7 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
     uv_tcp_ext_t *tcp_resource = (uv_tcp_ext_t *) resource;
     zval *readCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("readCallback"), 0 TSRMLS_CC);
     zval *errorCallback = zend_read_property(CLASS_ENTRY(UVTcp), tcp_resource->object, ZEND_STRL("errorCallback"), 0 TSRMLS_CC);
-    zval *sslHandshakeCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslHandshakeCallback"), 0 TSRMLS_CC);
+    //zval *sslHandshakeCallback = zend_read_property(CLASS_ENTRY(UVSSL), tcp_resource->object, ZEND_STRL("sslHandshakeCallback"), 0 TSRMLS_CC);
     zval retval;
     char read_buf[256];
     int size, read_buf_index = 0;
@@ -129,7 +127,9 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
             zval_dtor(&retval);
         }
         tcp_close_socket((uv_tcp_ext_t *) resource);
-        efree(buf->base);
+        if(buf->base) {
+            efree(buf->base);
+        }
         return;
     }
     
@@ -139,7 +139,6 @@ static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
         efree(buf->base);
         return;
     }
-
     while(1){
         size = SSL_read(resource->ssl, &read_buf[read_buf_index], sizeof(read_buf) - read_buf_index);
         if(size > 0){

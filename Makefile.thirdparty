@@ -1,6 +1,7 @@
 thirdparty/build/lib/libuv.a:
 	@echo "Build libuv"
-	cd thirdparty/libuv && \
+	cp -pr thirdparty/libuv /tmp && \ 
+	cd tmp/libuv && \
 	./autogen.sh && \
 	CFLAGS="$(CFLAGS) -fPIC"  ./configure --prefix="$(srcdir)/thirdparty/build" && \
 	make install

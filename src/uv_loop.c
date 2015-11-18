@@ -102,8 +102,6 @@ PHP_METHOD(UVLoop, backendTimeout) {
 PHP_METHOD(UVLoop, defaultLoop) {
     zval *instance = zend_read_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), 1 TSRMLS_CC);
     if(ZVAL_IS_NULL(instance)) {
-        instance = NULL;
-        MAKE_STD_ZVAL(instance);
         object_init_ex(instance, CLASS_ENTRY(UVLoop));
         zend_update_static_property(CLASS_ENTRY(UVLoop), ZEND_STRL("loop"), instance TSRMLS_CC);
         uv_loop_ext_t *resource = FETCH_OBJECT_RESOURCE(instance, uv_loop_ext_t);
