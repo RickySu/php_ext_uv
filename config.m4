@@ -56,7 +56,5 @@ fi
 
 PHP_ADD_MAKEFILE_FRAGMENT([Makefile.thirdparty])
 
-PHP_EXT_UV_SHARED_DEPENDENCIES="$THIRDPARTY_BUILD_DIR/lib/libuv.a"
-EXTRA_LDFLAGS="$EXTRA_LDFLAGS $THIRDPARTY_BUILD_DIR/lib/libuv.a"
-
+shared_objects_php_ext_uv="$THIRDPARTY_BUILD_DIR/lib/libuv.a $shared_objects_php_ext_uv"
 PHP_SUBST(PHP_EXT_UV_SHARED_DEPENDENCIES)

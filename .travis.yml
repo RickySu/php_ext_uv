@@ -15,6 +15,5 @@ before_script:
 script:
     - phpize
     - ./configure
-    - make thirdparty/build/lib/libuv.a
     - make all
     - echo "n" | make test
