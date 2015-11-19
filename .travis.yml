@@ -9,6 +9,9 @@ compiler:
     - gcc
 
 before_script:
-    - ./.travis.scripts/compile.sh
+    - git submodule update --init
 script:
-    - echo "n" | make test
+    - phpize
+    - ./configure
+    - make all
+    - NO_INTERACTION=1 make test

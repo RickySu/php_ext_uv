@@ -14,7 +14,7 @@ CLASS_ENTRY_FUNCTION_D(UVUdp){
 static void release(uv_udp_ext_t *resource){
 
     if(resource->flag & UV_UDP_READ_START){
-        resource->flag &= UV_UDP_READ_START;
+        resource->flag &= ~UV_UDP_READ_START;
         uv_udp_recv_stop(&resource->uv_udp);
     }
     
@@ -42,6 +42,7 @@ static void close_cb(uv_handle_t* handle) {
 static void send_cb(uv_udp_send_t* sr, int status) {
     send_req_t *req = (send_req_t *) sr;
     uv_udp_ext_t *resource = (uv_udp_ext_t *) sr->handle;
+    char *s_addr;
     zval retval, rv;
     zval params[4];
     zval *send_cb;
@@ -49,7 +50,8 @@ static void send_cb(uv_udp_send_t* sr, int status) {
     send_cb = zend_read_property(CLASS_ENTRY(UVUdp), &resource->object, ZEND_STRL("sendCallback"), 1, &rv);
     
     if(!Z_ISNULL_P(send_cb)){    
-        ZVAL_STRING(&params[1], sock_addr((struct sockaddr *) &req->addr));
+        s_addr = sock_addr((struct sockaddr *) &req->addr);
+        ZVAL_STRING(&params[1], s_addr);
         ZVAL_LONG(&params[2], sock_port((struct sockaddr *) &req->addr));
         ZVAL_LONG(&params[3], status);
     
@@ -59,6 +61,7 @@ static void send_cb(uv_udp_send_t* sr, int status) {
         zval_dtor(&params[2]);
         zval_dtor(&params[3]);
         zval_dtor(&retval);
+        efree(s_addr);
     }
     efree(req->buf.base);
     efree(req);
@@ -71,6 +74,7 @@ static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
 
 static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, const struct sockaddr* addr, unsigned int flags) {
     zval *recvCallback, *errorCallback;
+    char *s_addr;
     zval params[5];
     zval retval, rv;
     params[0] = resource->object;
@@ -78,7 +82,8 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
     errorCallback = zend_read_property(CLASS_ENTRY(UVUdp), &resource->object, ZEND_STRL("errorCallback"), 1, &rv);    
     if(nread > 0){
         if(!Z_ISNULL_P(recvCallback)){
-            ZVAL_STRING(&params[1], sock_addr((struct sockaddr *) addr));
+            s_addr = sock_addr((struct sockaddr *) addr);
+            ZVAL_STRING(&params[1], s_addr);
             ZVAL_LONG(&params[2], sock_port((struct sockaddr *) addr));
             ZVAL_STRINGL(&params[3], buf->base, nread);
             ZVAL_LONG(&params[4], flags);
@@ -90,6 +95,7 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
             zval_dtor(&params[3]);
             zval_dtor(&params[4]);
             zval_dtor(&retval);
+            efree(s_addr);
         }    
     }
     else{

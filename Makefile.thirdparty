@@ -1,13 +1,10 @@
-thirdparty/build/lib/libr3.a:
-	@echo "Build r3"
-	cd thirdparty/r3 && \
-	./autogen.sh && \
-	CFLAGS="$(CFLAGS) -fPIC"  ./configure --prefix="$(srcdir)/thirdparty/build" && \
-	make install
-
 thirdparty/build/lib/libuv.a:
 	@echo "Build libuv"
+	mkdir .tmp; \
+	mv ar-lib compile config.guess config.h.in config.sub configure.in depcomp install-sh ltmain.sh .tmp/; \
 	cd thirdparty/libuv && \
 	./autogen.sh && \
 	CFLAGS="$(CFLAGS) -fPIC"  ./configure --prefix="$(srcdir)/thirdparty/build" && \
-	make install
+	make install; \
+	mv $(srcdir)/.tmp/* $(srcdir); \
+	rmdir $(srcdir)/.tmp

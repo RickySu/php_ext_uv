@@ -277,7 +277,9 @@ void freeUVSSLResource(zend_object *object) {
         efree(resource->ctx);
         resource->ctx = NULL;
     }
-    
+    if(resource->sniConnectHostname){
+        efree(resource->sniConnectHostname);
+    }
     releaseResource(&resource->uv_tcp_ext);
     zend_object_std_dtor(object);
     efree(resource);

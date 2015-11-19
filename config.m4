@@ -43,8 +43,8 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
                            Check the path given to --with-openssl-dir and output in config.log)
               ])
       ])                          
-      MODULES="$MODULES src/uv_ssl.c"
-      LDFLAGS="$LDFLAGS -lssl"
+      MODULES="$MODULES src/uv_ssl.c"      
+      PHP_ADD_LIBRARY(ssl, PHP_EXT_UV_SHARED_LIBADD)
   fi
   dnl }}}
 
@@ -53,10 +53,8 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
   
 fi
 
-
+PHP_EXT_UV_SHARED_LIBADD="-lrt -lpthread $PHP_EXT_UV_SHARED_LIBADD"
 PHP_ADD_MAKEFILE_FRAGMENT([Makefile.thirdparty])
 
-PHP_EXT_UV_SHARED_DEPENDENCIES="$THIRDPARTY_BUILD_DIR/lib/libuv.a"
-EXTRA_LDFLAGS="$EXTRA_LDFLAGS $THIRDPARTY_BUILD_DIR/lib/libuv.a"
-
-PHP_SUBST(PHP_EXT_UV_SHARED_DEPENDENCIES)
+shared_objects_php_ext_uv="$THIRDPARTY_BUILD_DIR/lib/libuv.a $shared_objects_php_ext_uv"
+PHP_SUBST(PHP_EXT_UV_SHARED_LIBADD)
