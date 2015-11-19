@@ -53,11 +53,8 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
   
 fi
 
-PHP_ADD_LIBRARY(rt, PHP_EXT_UV_SHARED_LIBADD)
-PHP_ADD_LIBRARY(pthread, PHP_EXT_UV_SHARED_LIBADD)
-
+PHP_EXT_UV_SHARED_LIBADD="-lrt -lpthread $PHP_EXT_UV_SHARED_LIBADD"
 PHP_ADD_MAKEFILE_FRAGMENT([Makefile.thirdparty])
 
 shared_objects_php_ext_uv="$THIRDPARTY_BUILD_DIR/lib/libuv.a $shared_objects_php_ext_uv"
 PHP_SUBST(PHP_EXT_UV_SHARED_LIBADD)
-dnl PHP_SUBST(PHP_EXT_UV_SHARED_DEPENDENCIES)
