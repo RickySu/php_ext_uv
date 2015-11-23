@@ -55,6 +55,8 @@ typedef struct uv_ssl_ext_s{
     BIO* write_bio;
     char *sniConnectHostname;
     int clientMode;
+    fcall_info_t sslServerNameCallback;
+    fcall_info_t sslHandshakeCallback;
     uv_tcp_ext_t uv_tcp_ext;
 } uv_ssl_ext_t;
 
@@ -64,6 +66,15 @@ typedef struct uv_getaddrinfo_ext_s{
     uv_ssl_ext_t *ssl_handle;
 } uv_getaddrinfo_ext_t;
 
+static zend_always_inline void initUVSSLFunctionCache(uv_ssl_ext_t *resource){
+    ZVAL_NULL(&resource->sslServerNameCallback.func);
+    ZVAL_NULL(&resource->sslHandshakeCallback.func);
+}
+
+static zend_always_inline void releaseUVSSLFunctionCache(uv_ssl_ext_t *resource){
+    freeFunctionCache(&resource->sslServerNameCallback);
+    freeFunctionCache(&resource->sslHandshakeCallback);     
+}
 static zend_object *createUVSSLResource(zend_class_entry *class_type);
 void freeUVSSLResource(zend_object *object);
 static int write_bio_to_socket(uv_ssl_ext_t *resource);

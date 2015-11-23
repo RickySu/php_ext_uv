@@ -2,6 +2,7 @@
 #define _UV_TCP_H
 #include "../php_ext_uv.h"
 #include "uv_loop_resource.h"
+#include "fcall_info.h"
 
 #define UV_TCP_HANDLE_INTERNAL_REF 1
 #define UV_TCP_HANDLE_START (1<<1)
@@ -48,14 +49,35 @@ typedef struct uv_tcp_ext_s{
     int sockPort;
     char *peerAddr;
     int peerPort;
+    fcall_info_t readCallback;
+    fcall_info_t writeCallback;
+    fcall_info_t errorCallback;
+    fcall_info_t connectCallback;
+    fcall_info_t shutdownCallback;
     zval object;
-    zend_object zo;    
+    zend_object zo;
 } uv_tcp_ext_t;
 
 typedef struct write_req_s{
     uv_write_t uv_write;
     uv_buf_t buf;
 } write_req_t;
+
+static zend_always_inline void initUVTcpFunctionCache(uv_tcp_ext_t *resource){
+    ZVAL_NULL(&resource->readCallback.func);
+    ZVAL_NULL(&resource->writeCallback.func);
+    ZVAL_NULL(&resource->errorCallback.func);
+    ZVAL_NULL(&resource->connectCallback.func);
+    ZVAL_NULL(&resource->shutdownCallback.func);
+}
+
+static zend_always_inline void releaseUVTcpFunctionCache(uv_tcp_ext_t *resource){
+    freeFunctionCache(&resource->readCallback);
+    freeFunctionCache(&resource->writeCallback);
+    freeFunctionCache(&resource->errorCallback);
+    freeFunctionCache(&resource->connectCallback);
+    freeFunctionCache(&resource->shutdownCallback);
+}
 
 static zend_object *createUVTcpResource(zend_class_entry *class_type);
 static void freeUVTcpResource(zend_object *object);

@@ -2,6 +2,7 @@
 #define _UV_IDLE_H
 #include "../php_ext_uv.h"
 #include "uv_loop_resource.h"
+#include "fcall_info.h"
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVIdle, __construct), 0)
     ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)
@@ -14,6 +15,7 @@ ZEND_END_ARG_INFO()
 typedef struct uv_idle_ext_s{
     uv_idle_t uv_idle;
     int start;
+    fcall_info_t callback;
     zval object;
     zend_object zo;    
 } uv_idle_ext_t;
