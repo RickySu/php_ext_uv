@@ -5,7 +5,7 @@
 #include "fcall_info.h"
 
 #define INIT_INFO(i, t, o, c) \
-    i = emalloc(sizeof(t)); \
+    i = ecalloc(1, sizeof(t)); \
     i->object = *o; \
     ZVAL_NULL(&i->callback.func); \
     registerFunctionCache(&i->callback, c); \
