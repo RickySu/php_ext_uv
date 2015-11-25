@@ -76,8 +76,8 @@ PHP_METHOD(UVSignal, start){
     if(ret == 0){
         registerFunctionCache(&resource->callback, signal_cb);
         resource->start = 1;
-        resource->object = *self;
-        Z_ADDREF_P(self);
+        ZVAL_ZVAL(&resource->object, self, 1, 0);
+        Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);
 }

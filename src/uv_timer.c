@@ -70,7 +70,7 @@ PHP_METHOD(UVTimer, start){
     if(ret == 0){
         registerFunctionCache(&resource->callback, timer_cb);
         resource->start = 1;
-        resource->object = *self;
+        ZVAL_ZVAL(&resource->object, self, 1, 0);
         Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);
@@ -88,7 +88,7 @@ PHP_METHOD(UVTimer, stop){
     ret = uv_timer_stop((uv_timer_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF(resource->object);
+        zval_dtor(&resource->object);
     }
     RETURN_LONG(ret);
 }

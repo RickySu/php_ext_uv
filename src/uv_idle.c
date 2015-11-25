@@ -71,7 +71,7 @@ PHP_METHOD(UVIdle, start){
     if(ret == 0){
         registerFunctionCache(&resource->callback, idle_cb);
         resource->start = 1;
-        resource->object = *self;
+        ZVAL_ZVAL(&resource->object, self, 1, 0);
         Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);

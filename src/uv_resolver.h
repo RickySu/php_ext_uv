@@ -6,10 +6,9 @@
 
 #define INIT_INFO(i, t, o, c) \
     i = ecalloc(1, sizeof(t)); \
-    i->object = *o; \
+    ZVAL_ZVAL(&i->object, o, 1, 0); \
     ZVAL_NULL(&i->callback.func); \
-    registerFunctionCache(&i->callback, c); \
-    Z_ADDREF_P(o)
+    registerFunctionCache(&i->callback, c);
     
 #define RELEASE_INFO(info) \
     freeFunctionCache(&info->callback); \

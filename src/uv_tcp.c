@@ -334,7 +334,7 @@ PHP_METHOD(UVTcp, __construct){
         return;
     }
     
-    resource->object = *self;
+    ZVAL_ZVAL(&resource->object, self, 1, 0);
     
     if(NULL == loop || ZVAL_IS_NULL(loop)){
         uv_tcp_init(uv_default_loop(), (uv_tcp_t *) resource);
