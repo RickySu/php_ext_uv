@@ -31,6 +31,7 @@ void freeUVIdleResource(zend_object *object) {
     resource = FETCH_RESOURCE(object, uv_idle_ext_t);
     if(resource->start){
         uv_idle_stop((uv_idle_t *) resource);
+        zval_dtor(&resource->object);
     }
     
     uv_unref((uv_handle_t *) resource);
