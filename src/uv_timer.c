@@ -30,6 +30,7 @@ void freeUVTimerResource(zend_object *object) {
     uv_timer_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_timer_ext_t);
     if(resource->start){
+        zval_dtor(&resource->object);
         uv_timer_stop((uv_timer_t *) resource);
     }
     uv_unref((uv_handle_t *) resource);
