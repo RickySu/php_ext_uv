@@ -334,7 +334,7 @@ PHP_METHOD(UVTcp, __construct){
         return;
     }
     
-    ZVAL_ZVAL(&resource->object, self, 1, 0);
+    ZVAL_COPY(&resource->object, self);
     
     if(NULL == loop || ZVAL_IS_NULL(loop)){
         uv_tcp_init(uv_default_loop(), (uv_tcp_t *) resource);
@@ -438,6 +438,6 @@ zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *clien
     }
     
     client_resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
-    client_resource->object = *client;
+    ZVAL_COPY(&client_resource->object, client);
     return 1;
 }

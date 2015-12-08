@@ -229,7 +229,7 @@ PHP_METHOD(UVUdp, setCallback){
         registerFunctionCache(&resource->sendCallback, onSendCallback);
         registerFunctionCache(&resource->errorCallback, onErrorCallback);
         resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
-        ZVAL_ZVAL(&resource->object, self, 1, 0);
+        ZVAL_COPY(&resource->object, self);
         Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);

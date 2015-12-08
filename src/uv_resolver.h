@@ -6,7 +6,7 @@
 
 #define INIT_INFO(i, t, o, c) \
     i = ecalloc(1, sizeof(t)); \
-    ZVAL_ZVAL(&i->object, o, 1, 0); \
+    ZVAL_COPY(&i->object, o); \
     ZVAL_NULL(&i->callback.func); \
     registerFunctionCache(&i->callback, c);
     

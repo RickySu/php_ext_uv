@@ -29,9 +29,9 @@ static zend_object *createUVIdleResource(zend_class_entry *ce) {
 void freeUVIdleResource(zend_object *object) {
     uv_idle_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_idle_ext_t);
+
     if(resource->start){
         uv_idle_stop((uv_idle_t *) resource);
-        zval_dtor(&resource->object);
     }
     
     uv_unref((uv_handle_t *) resource);
@@ -72,7 +72,7 @@ PHP_METHOD(UVIdle, start){
     if(ret == 0){
         registerFunctionCache(&resource->callback, idle_cb);
         resource->start = 1;
-        ZVAL_ZVAL(&resource->object, self, 1, 0);
+        ZVAL_COPY(&resource->object, self);
         Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);

@@ -35,7 +35,6 @@ void freeUVSignalResource(zend_object *object) {
     resource = FETCH_RESOURCE(object, uv_signal_ext_t);
     if(resource->start){
         uv_signal_stop((uv_signal_t *) resource);
-        zval_dtor(&resource->object);
     }
     freeFunctionCache(&resource->callback);
     uv_unref((uv_handle_t *) resource);
@@ -76,7 +75,7 @@ PHP_METHOD(UVSignal, start){
     if(ret == 0){
         registerFunctionCache(&resource->callback, signal_cb);
         resource->start = 1;
-        ZVAL_ZVAL(&resource->object, self, 1, 0);
+        ZVAL_COPY(&resource->object, self);
         Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);
