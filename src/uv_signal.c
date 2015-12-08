@@ -76,7 +76,6 @@ PHP_METHOD(UVSignal, start){
         registerFunctionCache(&resource->callback, signal_cb);
         resource->start = 1;
         ZVAL_COPY(&resource->object, self);
-        Z_ADDREF(resource->object);
     }
     RETURN_LONG(ret);
 }
@@ -93,7 +92,7 @@ PHP_METHOD(UVSignal, stop){
     ret = uv_signal_stop((uv_signal_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        zval_dtor(&resource->object);
+        Z_DELREF(resource->object);
     }
     RETURN_LONG(ret);
 }

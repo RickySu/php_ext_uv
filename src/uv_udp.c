@@ -28,7 +28,7 @@ static void release(uv_udp_ext_t *resource){
 
     if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
-        zval_dtor(&resource->object);
+        Z_DELREF(resource->object);
     }
 }
 
@@ -229,8 +229,7 @@ PHP_METHOD(UVUdp, setCallback){
         registerFunctionCache(&resource->sendCallback, onSendCallback);
         registerFunctionCache(&resource->errorCallback, onErrorCallback);
         resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
-        ZVAL_COPY(&resource->object, self);
-        Z_ADDREF(resource->object);
+        ZVAL_COPY_VALUE(&resource->object, self);
     }
     RETURN_LONG(ret);
 }

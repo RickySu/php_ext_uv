@@ -51,7 +51,7 @@ void releaseResource(uv_tcp_ext_t *resource){
 
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_TCP_HANDLE_INTERNAL_REF;
-        zval_dtor(&resource->object);
+        Z_DELREF(resource->object);
     }    
 }
 
@@ -438,6 +438,6 @@ zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *clien
     }
     
     client_resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
-    ZVAL_COPY(&client_resource->object, client);
+    ZVAL_COPY_VALUE(&client_resource->object, client);
     return 1;
 }

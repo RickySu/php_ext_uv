@@ -12,7 +12,7 @@
     
 #define RELEASE_INFO(info) \
     freeFunctionCache(&info->callback); \
-    zval_dtor(&info->object); \
+    Z_DELREF(info->object); \
     efree(info)
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVResolver, __construct), 0)
