@@ -174,7 +174,7 @@ static void freeUVTcpResource(zend_object *object) {
     efree(resource);
 }
 
-static inline void resolveSocket(uv_tcp_ext_t *resource){
+static zend_always_inline void resolveSocket(uv_tcp_ext_t *resource){
     struct sockaddr addr;
     int addrlen;
     int ret;
@@ -188,7 +188,7 @@ static inline void resolveSocket(uv_tcp_ext_t *resource){
     }
 }
 
-static inline void resolvePeerSocket(uv_tcp_ext_t *resource){
+static zend_always_inline void resolvePeerSocket(uv_tcp_ext_t *resource){
     struct sockaddr addr;
     int addrlen;
     int ret;

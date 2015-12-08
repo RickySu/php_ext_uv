@@ -127,7 +127,7 @@ void freeUVUdpResource(zend_object *object) {
     efree(resource);
 }
 
-static inline void resolveSocket(uv_udp_ext_t *resource){
+static zend_always_inline void resolveSocket(uv_udp_ext_t *resource){
     struct sockaddr addr;
     int addrlen;
     int ret;
