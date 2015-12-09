@@ -38,6 +38,7 @@ void freeUVIdleResource(void *object TSRMLS_DC) {
     resource = FETCH_RESOURCE(object, uv_idle_ext_t);
     if(resource->start){
         uv_idle_stop((uv_idle_t *) resource);
+        zval_ptr_dtor(&resource->object);
     }
     uv_unref((uv_handle_t *) resource);
     freeFunctionCache(&resource->callback TSRMLS_CC);

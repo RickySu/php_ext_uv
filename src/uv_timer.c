@@ -4,17 +4,14 @@ CLASS_ENTRY_FUNCTION_D(UVTimer){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVTimer, createUVTimerResource);
     OBJECT_HANDLER(UVTimer).clone_obj = NULL;
     zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("callback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
 static void timer_handle_callback(uv_timer_ext_t *timer_handle){
-    zval *timer_cb;
     zval retval;
     zval *params[] = {timer_handle->object};
     TSRMLS_FETCH();
     ZVAL_NULL(&retval);
-    timer_cb = zend_read_property(CLASS_ENTRY(UVTimer), timer_handle->object, ZEND_STRL("callback"), 0 TSRMLS_CC);
-    call_user_function(CG(function_table), NULL, timer_cb, &retval, 1, params TSRMLS_CC);
+    fci_call_function(&timer_handle->callback, &retval, 1, params TSRMLS_CC);
     zval_dtor(&retval);
 }
 
@@ -40,10 +37,11 @@ void freeUVTimerResource(void *object TSRMLS_DC) {
     uv_timer_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_timer_ext_t);
     if(resource->start){
-        zval_ptr_dtor(&resource->object);
         uv_timer_stop((uv_timer_t *) resource);
+        zval_ptr_dtor(&resource->object);
     }
     uv_unref((uv_handle_t *) resource);
+    freeFunctionCache(&resource->callback TSRMLS_CC);
     zend_object_std_dtor(&resource->zo TSRMLS_CC);
     efree(resource);
 }
@@ -76,13 +74,9 @@ PHP_METHOD(UVTimer, start){
         return;
     }
     
-    if (!zend_is_callable(timer_cb, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param timer_cb is not callable");
-    }
-    
     ret = uv_timer_start((uv_timer_t *) resource, (uv_timer_cb) timer_handle_callback, start, repeat);
     if(ret == 0){
-        zend_update_property(CLASS_ENTRY(UVTimer), self, ZEND_STRL("callback"), timer_cb TSRMLS_CC);
+        registerFunctionCache(&resource->callback, timer_cb TSRMLS_CC);
         resource->start = 1;
         resource->object = self;
         Z_ADDREF_P(resource->object);
