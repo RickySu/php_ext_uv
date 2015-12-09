@@ -21,7 +21,7 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct 
         ZVAL_STRING(params[1], addr, 1);
         uv_freeaddrinfo(res);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 2, params TSRMLS_CC);
+    fci_call_function(&info->callback, &retval, 2, params TSRMLS_CC);
     zval_ptr_dtor(&params[0]);
     zval_ptr_dtor(&params[1]);
     zval_dtor(&retval);
@@ -43,7 +43,7 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
         ZVAL_STRING(params[1], hostname, 1);
         ZVAL_STRING(params[2], service, 1);
     }
-    call_user_function(CG(function_table), NULL, info->callback, &retval, 3, params TSRMLS_CC);
+    fci_call_function(&info->callback, &retval, 3, params TSRMLS_CC);
     for(i=0;i<=2;i++){
         zval_ptr_dtor(&params[i]);
     }
@@ -89,10 +89,6 @@ PHP_METHOD(UVResolver, getnameinfo){
         RETURN_LONG(ret);
     }
     
-    if (!zend_is_callable(nameinfoCallback, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param nameinfoCallback is not callable");
-    }
-
     INIT_INFO(info, uv_getnameinfo_ext_t, self, nameinfoCallback);
 
     if((ret = uv_getnameinfo(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_getnameinfo_t *) info, (uv_getnameinfo_cb) on_nameinfo_resolved, (const struct sockaddr*) &addr4, 0)) != 0) {
@@ -121,9 +117,6 @@ PHP_METHOD(UVResolver, getaddrinfo){
         return;
     }
    
-    if (!zend_is_callable(addrinfoCallback, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param addrinfoCallback is not callable");
-    }
     INIT_INFO(info, uv_getaddrinfo_ext_t, self, addrinfoCallback);
 
     MAKE_C_STR(c_node, node, node_len);

@@ -1,17 +1,17 @@
 #ifndef _UV_RESOLVER_H
 #define _UV_RESOLVER_H
 #include "../php_ext_uv.h"
+#include "fcall_info.h"
 #include "uv_loop_resource.h"
 
 #define INIT_INFO(i, t, o, c) \
-    i = emalloc(sizeof(t)); \
+    i = ecalloc(1, sizeof(t)); \
     i->object = o; \
-    i->callback = c; \
-    Z_ADDREF_P(c); \
-    Z_ADDREF_P(o)
+    Z_ADDREF_P(o); \
+    registerFunctionCache(&i->callback, c TSRMLS_CC);
     
 #define RELEASE_INFO(info) \
-    zval_ptr_dtor(&info->callback); \
+    freeFunctionCache(&info->callback TSRMLS_CC); \
     zval_ptr_dtor(&info->object); \
     efree(info)
 
@@ -33,13 +33,13 @@ ZEND_END_ARG_INFO()
 typedef struct uv_getaddrinfo_ext_s{
     uv_getaddrinfo_t uv_getaddrinfo;
     zval *object;
-    zval *callback;
+    fcall_info_t callback;
 } uv_getaddrinfo_ext_t;
 
 typedef struct uv_getnameinfo_ext_s{
     uv_getnameinfo_t uv_getnameinfo;
     zval *object;
-    zval *callback;
+    fcall_info_t callback;
 } uv_getnameinfo_ext_t;
 
 PHP_METHOD(UVResolver, __construct);
