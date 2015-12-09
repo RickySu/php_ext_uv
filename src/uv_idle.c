@@ -4,25 +4,21 @@ CLASS_ENTRY_FUNCTION_D(UVIdle){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVIdle, createUVIdleResource);
     OBJECT_HANDLER(UVIdle).clone_obj = NULL;
     zend_declare_property_null(CLASS_ENTRY(UVIdle), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVIdle), ZEND_STRL("callback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
 static void idle_handle_callback(uv_idle_ext_t *idle_handle){
-    zval *idle_cb;
     zval retval;
     zval *params[] = {idle_handle->object};
     TSRMLS_FETCH();
     ZVAL_NULL(&retval);
-    idle_cb = zend_read_property(CLASS_ENTRY(UVIdle), idle_handle->object, ZEND_STRL("callback"), 0 TSRMLS_CC);
-    call_user_function(CG(function_table), NULL, idle_cb, &retval, 1, params TSRMLS_CC);
+    fci_call_function(&idle_handle->callback, &retval, 1, params TSRMLS_CC);
     zval_dtor(&retval);
 }
 
 static zend_object_value createUVIdleResource(zend_class_entry *ce TSRMLS_DC) {
     zend_object_value retval;
     uv_idle_ext_t *resource;
-    resource = (uv_idle_ext_t *) emalloc(sizeof(uv_idle_ext_t));
-    memset(resource, 0, sizeof(uv_idle_ext_t));
+    resource = (uv_idle_ext_t *) ecalloc(1, sizeof(uv_idle_ext_t));
 
     zend_object_std_init(&resource->zo, ce TSRMLS_CC);
     object_properties_init(&resource->zo, ce);
@@ -43,8 +39,8 @@ void freeUVIdleResource(void *object TSRMLS_DC) {
     if(resource->start){
         uv_idle_stop((uv_idle_t *) resource);
     }
-    
     uv_unref((uv_handle_t *) resource);
+    freeFunctionCache(&resource->callback TSRMLS_CC);
     zend_object_std_dtor(&resource->zo TSRMLS_CC);
     efree(resource);
 }
@@ -78,13 +74,9 @@ PHP_METHOD(UVIdle, start){
         return;
     }
     
-    if (!zend_is_callable(idle_cb, 0, NULL TSRMLS_CC)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param idle_cb is not callable");
-    }
-    
     ret = uv_idle_start((uv_idle_t *) resource, (uv_idle_cb) idle_handle_callback);
     if(ret == 0){
-        zend_update_property(CLASS_ENTRY(UVIdle), self, ZEND_STRL("callback"), idle_cb TSRMLS_CC);
+        registerFunctionCache(&resource->callback, idle_cb TSRMLS_CC);
         resource->start = 1;
         resource->object = self;
         Z_ADDREF_P(resource->object);
@@ -100,11 +92,10 @@ PHP_METHOD(UVIdle, stop){
     if(!resource->start){
         RETURN_LONG(-1);
     }
-    
     ret = uv_idle_stop((uv_idle_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF_P(resource->object);
+        zval_ptr_dtor(&resource->object);
     }
     RETURN_LONG(ret);
 }

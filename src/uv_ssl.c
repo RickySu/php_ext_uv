@@ -27,7 +27,7 @@ static zend_always_inline void releaseUVSSLFunctionCache(uv_ssl_ext_t *resource 
 
 zend_always_inline int handleHandshakeCallback(uv_ssl_ext_t *resource, int err TSRMLS_DC){
     zval z_retval;
-    zval *params[] = {&resource->uv_tcp_ext.object, NULL};
+    zval *params[] = {resource->uv_tcp_ext.object, NULL};
     int retval;
     
     ZVAL_FALSE(&z_retval);
@@ -113,7 +113,7 @@ zend_always_inline int handleHandshake(uv_ssl_ext_t *resource, ssize_t nread, co
 
 static void read_cb(uv_ssl_ext_t *resource, ssize_t nread, const uv_buf_t* buf) {
     TSRMLS_FETCH();
-    zval *params[] = {&resource->uv_tcp_ext.object, NULL};
+    zval *params[] = {resource->uv_tcp_ext.object, NULL};
     uv_tcp_ext_t *tcp_resource = (uv_tcp_ext_t *) resource;
     zval retval;
     char read_buf[256];
@@ -193,7 +193,7 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     TSRMLS_FETCH();
     uv_ssl_ext_t *resource = (uv_ssl_ext_t *) req->handle;
     uv_tcp_ext_t *tcp_resource = (uv_tcp_ext_t *) resource;
-    zval *params[] = {&tcp_resource->object, NULL};
+    zval *params[] = {tcp_resource->object, NULL};
     zval retval;
     ZVAL_NULL(&retval);
     MAKE_STD_ZVAL(params[1]);
@@ -233,7 +233,7 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *addrinfo, int status, str
     struct sockaddr_in addr;
     uv_ssl_ext_t *resource = addrinfo->ssl_handle;
     uv_tcp_ext_t *tcp_resource = (uv_tcp_ext_t *) resource;
-    zval *params[] = {&tcp_resource->object, NULL};
+    zval *params[] = {tcp_resource->object, NULL};
     char host[17] = {'\0'};
     
     if( (ret = status) != 0 ||
@@ -429,7 +429,7 @@ PHP_METHOD(UVSSL, __construct){
         return;
     }
 
-    ZVAL_COPY_VALUE(&tcp_resource->object, self);
+    tcp_resource->object = self;
 
     if(NULL == loop || ZVAL_IS_NULL(loop)){
         uv_tcp_init(uv_default_loop(), (uv_tcp_t *) resource);

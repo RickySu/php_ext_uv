@@ -54,7 +54,7 @@ typedef struct uv_tcp_ext_s{
     fcall_info_t errorCallback;
     fcall_info_t connectCallback;
     fcall_info_t shutdownCallback;
-    zval object;
+    zval *object;
     zend_object zo;    
 } uv_tcp_ext_t;
 
