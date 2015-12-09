@@ -1,12 +1,19 @@
 #include "uv_udp.h"
 
+static zend_always_inline void initUVUdpFunctionCache(uv_udp_ext_t *resource TSRMLS_DC){
+}
+
+
+static zend_always_inline void releaseUVUdpFunctionCache(uv_udp_ext_t *resource TSRMLS_DC){
+    freeFunctionCache(&resource->recvCallback TSRMLS_CC);
+    freeFunctionCache(&resource->sendCallback TSRMLS_CC);
+    freeFunctionCache(&resource->errorCallback TSRMLS_CC);
+}
+
 CLASS_ENTRY_FUNCTION_D(UVUdp){
     REGISTER_CLASS_WITH_OBJECT_NEW(UVUdp, createUVUdpResource);
     OBJECT_HANDLER(UVUdp).clone_obj = NULL;
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("recvCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("sendCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
-    zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("errorCallback"), ZEND_ACC_PRIVATE TSRMLS_CC);
 }
 
 static void release(uv_udp_ext_t *resource){
@@ -41,11 +48,9 @@ static void send_cb(uv_udp_send_t* sr, int status) {
     uv_udp_ext_t *resource = (uv_udp_ext_t *) sr->handle;
     zval retval;
     zval *params[] = {resource->object, NULL, NULL, NULL};
-    zval *send_cb;
     TSRMLS_FETCH();
-    send_cb = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("sendCallback"), 0 TSRMLS_CC);
     
-    if(IS_NULL != Z_TYPE_P(send_cb)){    
+    if(resource->sendCallback.func){
         MAKE_STD_ZVAL(params[1]);
         ZVAL_STRING(params[1], sock_addr((struct sockaddr *) &req->addr), 0);
         MAKE_STD_ZVAL(params[2]);
@@ -53,7 +58,7 @@ static void send_cb(uv_udp_send_t* sr, int status) {
         MAKE_STD_ZVAL(params[3]);
         ZVAL_LONG(params[3], status);
     
-        call_user_function(CG(function_table), NULL, send_cb, &retval, 4, params TSRMLS_CC);
+        fci_call_function(&resource->sendCallback, &retval, 4, params TSRMLS_CC);
     
         zval_ptr_dtor(&params[1]);
         zval_ptr_dtor(&params[2]);
@@ -70,16 +75,12 @@ static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
 }
 
 static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, const struct sockaddr* addr, unsigned int flags) {
-    zval *recvCallback, *errorCallback;
     zval *params[] = {resource->object, NULL, NULL, NULL, NULL};
     zval retval;
     TSRMLS_FETCH();
 
-    recvCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("recvCallback"), 0 TSRMLS_CC);
-    errorCallback = zend_read_property(CLASS_ENTRY(UVUdp), resource->object, ZEND_STRL("errorCallback"), 0 TSRMLS_CC);    
-
     if(nread > 0){
-        if(IS_NULL != Z_TYPE_P(recvCallback)){
+        if(resource->recvCallback.func){
             MAKE_STD_ZVAL(params[1]);
             ZVAL_STRING(params[1], sock_addr((struct sockaddr *) addr), 0);
             MAKE_STD_ZVAL(params[2]);
@@ -91,7 +92,7 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
             MAKE_STD_ZVAL(params[4]);
             ZVAL_LONG(params[4], flags);
     
-            call_user_function(CG(function_table), NULL, recvCallback, &retval, 5, params TSRMLS_CC);
+            fci_call_function(&resource->recvCallback, &retval, 5, params TSRMLS_CC);
     
             zval_ptr_dtor(&params[1]);
             zval_ptr_dtor(&params[2]);
@@ -101,13 +102,13 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
         }    
     }
     else{
-        if(IS_NULL != Z_TYPE_P(errorCallback)){
+        if(resource->errorCallback.func){
             MAKE_STD_ZVAL(params[1]);
             ZVAL_LONG(params[1], nread);
             MAKE_STD_ZVAL(params[2]);
             ZVAL_LONG(params[2], flags);
     
-            call_user_function(CG(function_table), NULL, errorCallback, &retval, 3, params TSRMLS_CC);
+            fci_call_function(&resource->errorCallback, &retval, 3, params TSRMLS_CC);
     
             zval_ptr_dtor(&params[1]);
             zval_ptr_dtor(&params[2]);
@@ -133,6 +134,7 @@ static zend_object_value createUVUdpResource(zend_class_entry *ce TSRMLS_DC) {
         NULL TSRMLS_CC);
 
     retval.handlers = &OBJECT_HANDLER(UVUdp);
+    initUVUdpFunctionCache(resource TSRMLS_CC);
     return retval;
 }
 
@@ -140,7 +142,7 @@ void freeUVUdpResource(void *object TSRMLS_DC) {
     uv_udp_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_udp_ext_t);
     release(resource);
-    
+    releaseUVUdpFunctionCache(resource TSRMLS_CC);
     zend_object_std_dtor(&resource->zo TSRMLS_CC);
     efree(resource);
 }
@@ -240,24 +242,12 @@ PHP_METHOD(UVUdp, setCallback){
         return;
     }
     
-    if (!zend_is_callable(onRecvCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(onRecvCallback)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onRecvCallback is not callable");
-    }
-    
-    if (!zend_is_callable(onSendCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(onSendCallback)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onSendCallback is not callable");
-    }    
-    
-    if (!zend_is_callable(onErrorCallback, 0, NULL TSRMLS_CC) && IS_NULL != Z_TYPE_P(onErrorCallback)) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "param onErrorCallback is not callable");
-    }
-    
     ret = uv_udp_recv_start(&resource->uv_udp, alloc_cb, (uv_udp_recv_cb) recv_cb);
 
     if(ret == 0) {
-        zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("recvCallback"), onRecvCallback TSRMLS_CC);
-        zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("sendCallback"), onSendCallback TSRMLS_CC);
-        zend_update_property(CLASS_ENTRY(UVUdp), self, ZEND_STRL("errorCallback"), onErrorCallback TSRMLS_CC);
+        registerFunctionCache(&resource->recvCallback, onRecvCallback TSRMLS_CC);
+        registerFunctionCache(&resource->sendCallback, onSendCallback TSRMLS_CC);
+        registerFunctionCache(&resource->errorCallback, onErrorCallback TSRMLS_CC);
         resource->object = self;
         resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
         Z_ADDREF_P(resource->object);

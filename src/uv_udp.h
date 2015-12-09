@@ -1,6 +1,7 @@
 #ifndef _UV_UDP_H
 #define _UV_UDP_H
 #include "../php_ext_uv.h"
+#include "fcall_info.h"
 #include "uv_loop_resource.h"
 
 #define UV_UDP_HANDLE_INTERNAL_REF 1
@@ -32,7 +33,10 @@ typedef struct uv_udp_ext_s{
     uv_udp_t uv_udp;
     uint flag;
     char *sockAddr;
-    int sockPort;    
+    int sockPort;
+    fcall_info_t recvCallback;
+    fcall_info_t sendCallback;
+    fcall_info_t errorCallback;
     zval *object;
     zend_object zo;    
 } uv_udp_ext_t;
@@ -44,8 +48,9 @@ typedef struct send_req_s{
 } send_req_t;
 
 static zend_object_value createUVUdpResource(zend_class_entry *class_type TSRMLS_DC);
-
 void freeUVUdpResource(void *object TSRMLS_DC);
+static zend_always_inline void releaseUVUdpFunctionCache(uv_udp_ext_t *resource TSRMLS_DC);
+static zend_always_inline void initUVUdpFunctionCache(uv_udp_ext_t *resource TSRMLS_DC);
 
 PHP_METHOD(UVUdp, __construct);
 PHP_METHOD(UVUdp, getSockname);
