@@ -56,6 +56,8 @@ typedef struct uv_ssl_ext_s{
     BIO* write_bio;
     char *sniConnectHostname;
     int clientMode;
+    fcall_info_t sslServerNameCallback;
+    fcall_info_t sslHandshakeCallback;
 } uv_ssl_ext_t;
 
 typedef struct uv_getaddrinfo_ext_s{

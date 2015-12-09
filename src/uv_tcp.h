@@ -1,6 +1,7 @@
 #ifndef _UV_TCP_H
 #define _UV_TCP_H
 #include "../php_ext_uv.h"
+#include "fcall_info.h"
 #include "uv_loop_resource.h"
 
 #define UV_TCP_HANDLE_INTERNAL_REF 1
@@ -48,7 +49,12 @@ typedef struct uv_tcp_ext_s{
     int sockPort;
     char *peerAddr;
     int peerPort;
-    zval *object;
+    fcall_info_t readCallback;
+    fcall_info_t writeCallback;
+    fcall_info_t errorCallback;
+    fcall_info_t connectCallback;
+    fcall_info_t shutdownCallback;
+    zval object;
     zend_object zo;    
 } uv_tcp_ext_t;
 
@@ -66,7 +72,10 @@ static void tcp_close_cb(uv_handle_t* handle);
 void tcp_close_socket(uv_tcp_ext_t *handle);
 void setSelfReference(uv_tcp_ext_t *resource);
 void releaseResource(uv_tcp_ext_t *resource);
-
+    
+static zend_always_inline void initUVTcpFunctionCache(uv_tcp_ext_t *resource TSRMLS_DC);
+static zend_always_inline void releaseUVTcpFunctionCache(uv_tcp_ext_t *resource TSRMLS_DC);
+    
 PHP_METHOD(UVTcp, getSockname);
 PHP_METHOD(UVTcp, getSockport);
 PHP_METHOD(UVTcp, getPeername);
