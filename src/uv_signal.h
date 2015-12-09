@@ -1,6 +1,7 @@
 #ifndef _UV_SIGNAL_H
 #define _UV_SIGNAL_H
 #include "../php_ext_uv.h"
+#include "fcall_info.h"
 #include "uv_loop_resource.h"
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVSignal, __construct), 0)
@@ -15,6 +16,7 @@ ZEND_END_ARG_INFO()
 typedef struct uv_signal_ext_s{
     uv_signal_t uv_signal;
     int start;
+    fcall_info_t callback;
     zval *object;
     zend_object zo;    
 } uv_signal_ext_t;
