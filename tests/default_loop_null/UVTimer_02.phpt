@@ -5,7 +5,7 @@ Check for UVTime repeat
 $loop = UVLoop::defaultLoop();
 $timer = new UVTimer(null);
 $time = time();
-$timer->start(function($timer) use($time){
+$timer->start(function($timer2) use($timer, $time){
     $timediff = time() - $time;
     echo "timer alerm after $timediff secs\n";
     if($timediff>=5){

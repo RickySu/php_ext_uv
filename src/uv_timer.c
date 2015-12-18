@@ -31,9 +31,10 @@ void freeUVTimerResource(zend_object *object) {
     resource = FETCH_RESOURCE(object, uv_timer_ext_t);
     if(resource->start){
         uv_timer_stop((uv_timer_t *) resource);
+        freeFunctionCache(&resource->callback);
     }
     uv_unref((uv_handle_t *) resource);
-    freeFunctionCache(&resource->callback);
+
     zend_object_std_dtor(&resource->zo);
     efree(resource);
 }
@@ -87,6 +88,7 @@ PHP_METHOD(UVTimer, stop){
     ret = uv_timer_stop((uv_timer_t *) resource);
     if(ret == 0){
         resource->start = 0;
+        freeFunctionCache(&resource->callback);
         Z_DELREF(resource->object);
     }
     RETURN_LONG(ret);
