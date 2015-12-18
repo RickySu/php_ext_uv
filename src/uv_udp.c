@@ -28,7 +28,7 @@ static void release(uv_udp_ext_t *resource){
 
     if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
-        Z_DELREF(resource->object);
+        zval_dtor(&resource->object);
     }
 }
 

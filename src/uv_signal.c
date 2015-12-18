@@ -93,7 +93,7 @@ PHP_METHOD(UVSignal, stop){
     if(ret == 0){
         resource->start = 0;
         freeFunctionCache(&resource->callback);
-        Z_DELREF(resource->object);
+        zval_dtor(&resource->object);
     }
     RETURN_LONG(ret);
 }

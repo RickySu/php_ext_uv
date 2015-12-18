@@ -51,7 +51,7 @@ void releaseResource(uv_tcp_ext_t *resource){
 
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_TCP_HANDLE_INTERNAL_REF;
-        Z_DELREF(resource->object);
+        zval_dtor(&resource->object);
     }    
 }
 

@@ -89,7 +89,7 @@ PHP_METHOD(UVIdle, stop){
     ret = uv_idle_stop((uv_idle_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        Z_DELREF(resource->object);
+        zval_dtor(&resource->object);
     }
     RETURN_LONG(ret);
 }
