@@ -2,7 +2,7 @@
 #define _UV_TCP_H
 #include "../php_ext_uv.h"
 #include "uv_loop_resource.h"
-#include "fcall_info.h"
+#include "fcall.h"
 
 #define UV_TCP_HANDLE_INTERNAL_REF 1
 #define UV_TCP_HANDLE_START (1<<1)
@@ -62,14 +62,6 @@ typedef struct write_req_s{
     uv_write_t uv_write;
     uv_buf_t buf;
 } write_req_t;
-
-static zend_always_inline void initUVTcpFunctionCache(uv_tcp_ext_t *resource){
-    ZVAL_NULL(&resource->readCallback.func);
-    ZVAL_NULL(&resource->writeCallback.func);
-    ZVAL_NULL(&resource->errorCallback.func);
-    ZVAL_NULL(&resource->connectCallback.func);
-    ZVAL_NULL(&resource->shutdownCallback.func);
-}
 
 static zend_always_inline void releaseUVTcpFunctionCache(uv_tcp_ext_t *resource){
     freeFunctionCache(&resource->readCallback);

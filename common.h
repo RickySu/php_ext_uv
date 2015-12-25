@@ -56,10 +56,6 @@
 #define ARGINFO(classname, method) \
     arginfo_##classname##_##method
 
-#ifndef offsetof
-#define offsetof(s,memb) ((size_t)((char *)&((s *)0)->memb-(char *)0))
-#endif
-
 #define FETCH_RESOURCE(pointer, type) (type *) ((void *)pointer - XtOffsetOf(type, zo))
 
 #define FETCH_RESOURCE_FROM_EXTEND(pointer, item, type) (type *) ((void *)pointer - XtOffsetOf(type, item))
@@ -70,8 +66,7 @@
 #define REGISTER_CLASS_CONSTANT_LONG(class, name) \
     zend_declare_class_constant_long(CLASS_ENTRY(class), ZEND_STRL(#name), name)
 
-#define ALLOC_RESOURCE(x) \
-    ((x *) ecalloc(1, sizeof(x) + zend_object_properties_size(ce)))
+#define ALLOC_RESOURCE(x) ecalloc(1, sizeof(x) + zend_object_properties_size(ce))
 
 #define Z_DELREF_AND_DTOR_P(o) \
     do{ \

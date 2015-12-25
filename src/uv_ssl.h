@@ -66,11 +66,6 @@ typedef struct uv_getaddrinfo_ext_s{
     uv_ssl_ext_t *ssl_handle;
 } uv_getaddrinfo_ext_t;
 
-static zend_always_inline void initUVSSLFunctionCache(uv_ssl_ext_t *resource){
-    ZVAL_NULL(&resource->sslServerNameCallback.func);
-    ZVAL_NULL(&resource->sslHandshakeCallback.func);
-}
-
 static zend_always_inline void releaseUVSSLFunctionCache(uv_ssl_ext_t *resource){
     freeFunctionCache(&resource->sslServerNameCallback);
     freeFunctionCache(&resource->sslHandshakeCallback);     

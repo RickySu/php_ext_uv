@@ -25,7 +25,6 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
 }
 
-
 void releaseResource(uv_tcp_ext_t *resource){
     if(resource->sockPort != 0){
         resource->sockPort = 0;
@@ -60,11 +59,9 @@ static void shutdown_cb(uv_shutdown_t* req, int status) {
     zval retval;
     zval params[2];
     params[0] = resource->object;
-    if(!Z_ISNULL(resource->shutdownCallback.func)){
+    if(!FCI_ISNULL(resource->shutdownCallback)){
         ZVAL_LONG(&params[1], status);
         fci_call_function(&resource->shutdownCallback, &retval, 2, params);
-
-        zval_dtor(&params[1]);
         zval_dtor(&retval);
     }
 }
@@ -80,14 +77,10 @@ static void write_cb(uv_write_t *wr, int status){
     zval params[3];
     params[0] = resource->object;
 
-    if(resource->flag & UV_TCP_WRITE_CALLBACK_ENABLE && !Z_ISNULL(resource->writeCallback.func)){
+    if(resource->flag & UV_TCP_WRITE_CALLBACK_ENABLE && !FCI_ISNULL(resource->writeCallback)){
         ZVAL_LONG(&params[1], status);
-        ZVAL_LONG(&params[2], req->buf.len);
-    
+        ZVAL_LONG(&params[2], req->buf.len);    
         fci_call_function(&resource->writeCallback, &retval, 3, params);
-    
-        zval_dtor(&params[1]);
-        zval_dtor(&params[2]);
         zval_dtor(&retval);
     }
     efree(req->buf.base);
@@ -105,22 +98,22 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
     params[0] = resource->object;
     
     if(nread > 0){
-        if(!Z_ISNULL(resource->readCallback.func)){
+        if(!FCI_ISNULL(resource->readCallback)){
             ZVAL_STRINGL(&params[1], buf->base, nread);
             fci_call_function(&resource->readCallback, &retval, 2, params);
             zval_dtor(&params[1]);
+            zval_dtor(&retval);
         }
     }
     else{    
-        if(!Z_ISNULL(resource->errorCallback.func)){
+        if(!FCI_ISNULL(resource->errorCallback)){
             ZVAL_LONG(&params[1], nread);        
             fci_call_function(&resource->errorCallback, &retval, 2, params);
-            zval_dtor(&params[1]);
+            zval_dtor(&retval);
         }
         tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
     }
     efree(buf->base);
-    zval_dtor(&retval);    
 }
 
 static void client_connection_cb(uv_connect_t* req, int status) {
@@ -137,7 +130,6 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
     
     fci_call_function(&resource->connectCallback, &retval, 2, params);
-    zval_dtor(&params[1]);
     zval_dtor(&retval);
 }
 
@@ -148,7 +140,6 @@ static void connection_cb(uv_tcp_ext_t *resource, int status) {
     ZVAL_NULL(&retval);
     ZVAL_LONG(&params[1], status);
     fci_call_function(&resource->connectCallback, &retval, 2, params);
-    zval_dtor(&params[1]);
     zval_dtor(&retval);
 }
 
@@ -156,12 +147,9 @@ static void connection_cb(uv_tcp_ext_t *resource, int status) {
 static zend_object *createUVTcpResource(zend_class_entry *ce) {
     uv_tcp_ext_t *resource;
     resource = ALLOC_RESOURCE(uv_tcp_ext_t);
-
     zend_object_std_init(&resource->zo, ce);
-    object_properties_init(&resource->zo, ce);
-    
+    object_properties_init(&resource->zo, ce);    
     resource->zo.handlers = &OBJECT_HANDLER(UVTcp);
-    initUVTcpFunctionCache(resource);
     return &resource->zo;
 }
 
@@ -171,7 +159,6 @@ static void freeUVTcpResource(zend_object *object) {
     releaseResource(resource);
     releaseUVTcpFunctionCache(resource);
     zend_object_std_dtor(object);
-    efree(resource);
 }
 
 static zend_always_inline void resolveSocket(uv_tcp_ext_t *resource){
@@ -266,7 +253,6 @@ PHP_METHOD(UVTcp, accept){
 PHP_METHOD(UVTcp, listen){
     long ret, port;
     zval *self = getThis();
-    zval *onConnectCallback;
     const char *host = NULL;
     size_t host_len;
     char cstr_host[30];
@@ -274,28 +260,35 @@ PHP_METHOD(UVTcp, listen){
     
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "slz", &host, &host_len, &port, &onConnectCallback)) {
+    FCI_FREE(resource->connectCallback);
+    
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "slf", &host, &host_len, &port, FCI_PARSE_PARAMETERS_CC(resource->connectCallback))) {
         return;
     }
     
-    if(host_len == 0 || host_len >= 30){        
+    FCI_ADDREF(resource->connectCallback);
+    
+    if(host_len == 0 || host_len >= 30){
+        FCI_FREE(resource->connectCallback);
         RETURN_LONG(-1);
     }
     
     memcpy(cstr_host, host, host_len);
     cstr_host[host_len] = '\0';
     if((ret = uv_ip4_addr(cstr_host, port&0xffff, &addr)) != 0){
+        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
     
     if((ret = uv_tcp_bind(&resource->uv_tcp, (const struct sockaddr*) &addr, 0)) != 0){
+        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
     
     if((ret = uv_listen((uv_stream_t *) &resource->uv_tcp, SOMAXCONN, (uv_connection_cb) connection_cb)) != 0){
+        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
-    registerFunctionCache(&resource->connectCallback, onConnectCallback);
     setSelfReference(resource);
     resource->flag |= UV_TCP_HANDLE_START;    
     RETURN_LONG(ret);
@@ -303,17 +296,19 @@ PHP_METHOD(UVTcp, listen){
 
 PHP_METHOD(UVTcp, setCallback){
     long ret;
-    zval *onReadCallback, *onWriteCallback, *onErrorCallback;
     zval *self = getThis();
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "zzz", &onReadCallback, &onWriteCallback, &onErrorCallback)) {
+    FCI_FREE(resource->readCallback);
+    FCI_FREE(resource->writeCallback);
+    FCI_FREE(resource->errorCallback);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "fff", FCI_PARSE_PARAMETERS_CC(resource->readCallback), FCI_PARSE_PARAMETERS_CC(resource->writeCallback), FCI_PARSE_PARAMETERS_CC(resource->errorCallback))) {
         return;
     }
     
-    registerFunctionCache(&resource->readCallback, onReadCallback);
-    registerFunctionCache(&resource->writeCallback, onWriteCallback);
-    registerFunctionCache(&resource->errorCallback, onErrorCallback);
+    FCI_ADDREF(resource->readCallback);
+    FCI_ADDREF(resource->writeCallback);
+    FCI_ADDREF(resource->errorCallback);
     setSelfReference(resource);
     RETURN_LONG(ret);
 }
@@ -334,7 +329,7 @@ PHP_METHOD(UVTcp, __construct){
         return;
     }
     
-    ZVAL_COPY(&resource->object, self);
+    ZVAL_COPY_VALUE(&resource->object, self);
     
     if(NULL == loop || ZVAL_IS_NULL(loop)){
         uv_tcp_init(uv_default_loop(), (uv_tcp_t *) resource);
@@ -371,28 +366,28 @@ int tcp_write_raw(uv_stream_t * handle, const char *message, int size) {
 
 PHP_METHOD(UVTcp, shutdown){
     long ret;
-    zval *onShutdownCallback;
     zval *self = getThis();
     char *buf;
     int buf_len;
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &onShutdownCallback)) {
+    FCI_FREE(resource->shutdownCallback);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "f", FCI_PARSE_PARAMETERS_CC(resource->shutdownCallback))) {
         return;
     }
+    FCI_ADDREF(resource->shutdownCallback);
     
-    if((ret = uv_shutdown(&resource->shutdown_req, (uv_stream_t *) &resource->uv_tcp, shutdown_cb)) == 0){
-        registerFunctionCache(&resource->shutdownCallback, onShutdownCallback);        
-        setSelfReference(resource);
+    if(ret = uv_shutdown(&resource->shutdown_req, (uv_stream_t *) &resource->uv_tcp, shutdown_cb)){
+        RETURN_LONG(ret);
     }
     
+    setSelfReference(resource);
     RETURN_LONG(ret);
 }
 
 PHP_METHOD(UVTcp, connect){
     long ret, port;
     zval *self = getThis();
-    zval *onConnectCallback;
     const char *host = NULL;
     size_t host_len;
     char cstr_host[30];
@@ -400,25 +395,29 @@ PHP_METHOD(UVTcp, connect){
     
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "slz", &host, &host_len, &port, &onConnectCallback)) {
+    FCI_FREE(resource->connectCallback);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "slf", &host, &host_len, &port, FCI_PARSE_PARAMETERS_CC(resource->connectCallback))) {
         return;
     }
+    FCI_ADDREF(resource->connectCallback);
     
-    if(host_len == 0 || host_len >= 30){        
+    if(host_len == 0 || host_len >= 30){
+        FCI_FREE(resource->connectCallback);
         RETURN_LONG(-1);
     }
 
     memcpy(cstr_host, host, host_len);
     cstr_host[host_len] = '\0';
     if((ret = uv_ip4_addr(cstr_host, port&0xffff, &addr)) != 0){
+        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
     
     if((ret = uv_tcp_connect(&resource->connect_req, &resource->uv_tcp, (const struct sockaddr *) &addr, client_connection_cb)) != 0){
+        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
     
-    registerFunctionCache(&resource->connectCallback, onConnectCallback);
     setSelfReference(resource);
     resource->flag |= UV_TCP_HANDLE_START;    
     RETURN_LONG(ret);
