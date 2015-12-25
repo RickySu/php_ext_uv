@@ -44,7 +44,7 @@ static void send_cb(uv_udp_send_t* sr, int status) {
     zval params[4];
     params[0] = resource->object;
     
-    if(!Z_ISNULL(resource->sendCallback.func)){    
+    if(!FCI_ISNULL(resource->sendCallback)){
         s_addr = sock_addr((struct sockaddr *) &req->addr);
         ZVAL_STRING(&params[1], s_addr);
         ZVAL_LONG(&params[2], sock_port((struct sockaddr *) &req->addr));
@@ -53,8 +53,6 @@ static void send_cb(uv_udp_send_t* sr, int status) {
         fci_call_function(&resource->sendCallback, &retval, 4, params);
 
         zval_dtor(&params[1]);
-        zval_dtor(&params[2]);
-        zval_dtor(&params[3]);
         zval_dtor(&retval);
         efree(s_addr);
     }
@@ -73,7 +71,7 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
     zval retval;
     params[0] = resource->object;
     if(nread > 0){
-        if(!Z_ISNULL(resource->recvCallback.func)){
+        if(!FCI_ISNULL(resource->recvCallback)){
             s_addr = sock_addr((struct sockaddr *) addr);
             ZVAL_STRING(&params[1], s_addr);
             ZVAL_LONG(&params[2], sock_port((struct sockaddr *) addr));
@@ -83,22 +81,18 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
             fci_call_function(&resource->recvCallback, &retval, 5, params);
     
             zval_dtor(&params[1]);
-            zval_dtor(&params[2]);
             zval_dtor(&params[3]);
-            zval_dtor(&params[4]);
             zval_dtor(&retval);
             efree(s_addr);
         }    
     }
     else{
-        if(!Z_ISNULL(resource->errorCallback.func)){
+        if(!FCI_ISNULL(resource->errorCallback)){
             ZVAL_LONG(&params[1], nread);
             ZVAL_LONG(&params[2], flags);
     
             fci_call_function(&resource->errorCallback, &retval, 3, params);
     
-            zval_dtor(&params[1]);
-            zval_dtor(&params[2]);
             zval_dtor(&retval);
         }
     }
@@ -108,23 +102,18 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
 static zend_object *createUVUdpResource(zend_class_entry *ce) {
     uv_udp_ext_t *resource;
     resource = ALLOC_RESOURCE(uv_udp_ext_t);
-
     zend_object_std_init(&resource->zo, ce);
-    object_properties_init(&resource->zo, ce);
-    
+    object_properties_init(&resource->zo, ce);    
     resource->zo.handlers = &OBJECT_HANDLER(UVUdp);
-    initUVUdpFunctionCache(resource);
     return &resource->zo;
 }
 
 void freeUVUdpResource(zend_object *object) {
     uv_udp_ext_t *resource;
-    resource = FETCH_RESOURCE(object, uv_udp_ext_t);
-    
+    resource = FETCH_RESOURCE(object, uv_udp_ext_t);    
     release(resource);
     releaseUVUdpFunctionCache(resource);
     zend_object_std_dtor(&resource->zo);
-    efree(resource);
 }
 
 static zend_always_inline void resolveSocket(uv_udp_ext_t *resource){
@@ -214,23 +203,28 @@ PHP_METHOD(UVUdp, bind){
 
 PHP_METHOD(UVUdp, setCallback){
     long ret;
-    zval *onRecvCallback, *onSendCallback, *onErrorCallback;
     zval *self = getThis();
     uv_udp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_udp_ext_t);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "zzz", &onRecvCallback, &onSendCallback, &onErrorCallback)) {
+    FCI_FREE(resource->recvCallback);
+    FCI_FREE(resource->sendCallback);
+    FCI_FREE(resource->errorCallback);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "fff", FCI_PARSE_PARAMETERS_CC(resource->recvCallback), FCI_PARSE_PARAMETERS_CC(resource->sendCallback), FCI_PARSE_PARAMETERS_CC(resource->errorCallback))) {
         return;
     }
-    
-    ret = uv_udp_recv_start(&resource->uv_udp, alloc_cb, (uv_udp_recv_cb) recv_cb);
+    FCI_ADDREF(resource->recvCallback);
+    FCI_ADDREF(resource->sendCallback);
+    FCI_ADDREF(resource->errorCallback);
 
-    if(ret == 0) {
-        registerFunctionCache(&resource->recvCallback, onRecvCallback);
-        registerFunctionCache(&resource->sendCallback, onSendCallback);
-        registerFunctionCache(&resource->errorCallback, onErrorCallback);
-        resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
-        ZVAL_COPY_VALUE(&resource->object, self);
+    if(ret = uv_udp_recv_start(&resource->uv_udp, alloc_cb, (uv_udp_recv_cb) recv_cb)){
+        FCI_FREE(resource->recvCallback);
+        FCI_FREE(resource->sendCallback);
+        FCI_FREE(resource->errorCallback);
+        RETURN_LONG(ret);
     }
+    
+    resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
+    ZVAL_COPY(&resource->object, self);
     RETURN_LONG(ret);
 }
 

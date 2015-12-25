@@ -2,7 +2,7 @@
 #define _UV_UDP_H
 #include "../php_ext_uv.h"
 #include "uv_loop_resource.h"
-#include "fcall_info.h"
+#include "fcall.h"
 
 #define UV_UDP_HANDLE_INTERNAL_REF 1
 #define UV_UDP_HANDLE_START (1<<1)
@@ -69,12 +69,6 @@ DECLARE_FUNCTION_ENTRY(UVUdp) = {
     PHP_ME(UVUdp, setCallback, ARGINFO(UVUdp, setCallback), ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
-
-static zend_always_inline void initUVUdpFunctionCache(uv_udp_ext_t *resource){
-    ZVAL_NULL(&resource->recvCallback.func);
-    ZVAL_NULL(&resource->sendCallback.func);
-    ZVAL_NULL(&resource->errorCallback.func);
-}
 
 static zend_always_inline void releaseUVUdpFunctionCache(uv_udp_ext_t *resource){
     freeFunctionCache(&resource->recvCallback);

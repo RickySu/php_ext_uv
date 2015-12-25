@@ -12,6 +12,7 @@ $timer->start(function($timer2) use($timer, $time){
     var_dump($timer === $timer2);    
 }, 2000);
 $loop->run();
+$timer->stop();
 ?>
 --EXPECT--
 timer alerm after 2 secs

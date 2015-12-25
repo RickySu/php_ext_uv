@@ -12,6 +12,7 @@ $signal->start(function($signal2, $signno) use($signal){
     echo "signal stop";
 }, SIGUSR1);
 if($pid = pcntl_fork()){
+    $signal->stop();
     posix_kill($pid, SIGUSR1);
     pcntl_wait($status);
 }
