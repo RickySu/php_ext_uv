@@ -18,7 +18,6 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct 
         uv_freeaddrinfo(res);
     }
     fci_call_function(&info->callback, &retval, 2, params);
-    zval_dtor(&params[0]);
     zval_dtor(&params[1]);
     zval_dtor(&retval);
     RELEASE_INFO(info);
@@ -36,7 +35,6 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
         ZVAL_STRING(&params[2], service);
     }
     fci_call_function(&info->callback, &retval, 3, params);
-    zval_dtor(&params[0]);
     zval_dtor(&params[1]);
     zval_dtor(&params[2]);
     zval_dtor(&retval);
@@ -63,20 +61,25 @@ PHP_METHOD(UVResolver, getnameinfo){
     zval *self = getThis();
     const char *addr = NULL;
     size_t addr_len;
-    zval *nameinfoCallback;
     zval *loop, rv;
     static struct sockaddr_in addr4;
     char cstr_addr[30];
     uv_getnameinfo_ext_t *info;
     loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 1, &rv);
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "sz", &addr, &addr_len, &nameinfoCallback)) {
+
+    INIT_INFO(info, uv_getnameinfo_ext_t, self);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "sf", &addr, &addr_len, FCI_PARSE_PARAMETERS_CC(info->callback))) {
+        efree(info);
         return;
     }
+    FCI_ADDREF(info->callback);
+    
     COPY_C_STR(cstr_addr, addr, addr_len);
     if((ret = uv_ip4_addr(addr, 0, &addr4)) !=0){
+        RELEASE_INFO(info);
         RETURN_LONG(ret);
     }
-    INIT_INFO(info, uv_getnameinfo_ext_t, self, nameinfoCallback);
+
     if((ret = uv_getnameinfo(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_getnameinfo_t *) info, (uv_getnameinfo_cb) on_nameinfo_resolved, (const struct sockaddr*) &addr4, 0)) != 0) {
         RELEASE_INFO(info);
     }
@@ -90,7 +93,6 @@ PHP_METHOD(UVResolver, getaddrinfo){
     const char *node = NULL, *service = NULL;
     char *c_node, *c_service;
     size_t node_len, service_len;
-    zval *addrinfoCallback;
     zval *loop, rv;
     static struct sockaddr_in addr4;
     char cstr_addr[30];
@@ -98,11 +100,13 @@ PHP_METHOD(UVResolver, getaddrinfo){
     
     loop = zend_read_property(CLASS_ENTRY(UVResolver), self, ZEND_STRL("loop"), 1, &rv);
 
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "ssz", &node, &node_len, &service, &service_len, &addrinfoCallback)) {
+    INIT_INFO(info, uv_getaddrinfo_ext_t, self);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "ssf", &node, &node_len, &service, &service_len, FCI_PARSE_PARAMETERS_CC(info->callback))) {
+        efree(info);
         return;
     }
-   
-    INIT_INFO(info, uv_getaddrinfo_ext_t, self, addrinfoCallback);
+    FCI_ADDREF(info->callback);
+    
     MAKE_C_STR(c_node, node, node_len);
     MAKE_C_STR(c_service, service, service_len);
         

@@ -2,16 +2,14 @@
 #define _UV_RESOLVER_H
 #include "../php_ext_uv.h"
 #include "uv_loop_resource.h"
-#include "fcall_info.h"
+#include "fcall.h"
 
-#define INIT_INFO(i, t, o, c) \
+#define INIT_INFO(i, t, o) \
     i = ecalloc(1, sizeof(t)); \
-    ZVAL_COPY(&i->object, o); \
-    ZVAL_NULL(&i->callback.func); \
-    registerFunctionCache(&i->callback, c);
+    ZVAL_COPY(&i->object, o)
     
 #define RELEASE_INFO(info) \
-    freeFunctionCache(&info->callback); \
+    FCI_FREE(info->callback); \
     zval_dtor(&info->object); \
     efree(info)
 

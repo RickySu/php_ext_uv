@@ -2,7 +2,7 @@
 #define _UV_IDLE_H
 #include "../php_ext_uv.h"
 #include "uv_loop_resource.h"
-#include "fcall_info.h"
+#include "fcall.h"
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVIdle, __construct), 0)
     ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)

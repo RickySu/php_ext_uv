@@ -17,27 +17,21 @@ static void idle_handle_callback(uv_idle_ext_t *idle_handle){
 static zend_object *createUVIdleResource(zend_class_entry *ce) {
     uv_idle_ext_t *resource;
     resource = ALLOC_RESOURCE(uv_idle_ext_t);
-
     zend_object_std_init(&resource->zo, ce);
-    object_properties_init(&resource->zo, ce);
-    
+    object_properties_init(&resource->zo, ce);    
     resource->zo.handlers = &OBJECT_HANDLER(UVIdle);
-    ZVAL_NULL(&resource->callback.func);
     return &resource->zo;
 }
 
 void freeUVIdleResource(zend_object *object) {
     uv_idle_ext_t *resource;
     resource = FETCH_RESOURCE(object, uv_idle_ext_t);
-
     if(resource->start){
         uv_idle_stop((uv_idle_t *) resource);
     }
-    
     uv_unref((uv_handle_t *) resource);
     freeFunctionCache(&resource->callback);
     zend_object_std_dtor(&resource->zo);
-    efree(resource);
 }
 
 PHP_METHOD(UVIdle, __construct){
@@ -59,21 +53,22 @@ PHP_METHOD(UVIdle, __construct){
 }
 
 PHP_METHOD(UVIdle, start){
-    zval *idle_cb;
     long ret;
     zval *self = getThis();
     uv_idle_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_idle_ext_t);
-    
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &idle_cb)) {
+    FCI_FREE(resource->callback);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "f", FCI_PARSE_PARAMETERS_CC(resource->callback))) {
         return;
     }
+    FCI_ADDREF(resource->callback);
     
-    ret = uv_idle_start((uv_idle_t *) resource, (uv_idle_cb) idle_handle_callback);
-    if(ret == 0){
-        registerFunctionCache(&resource->callback, idle_cb);
-        resource->start = 1;
-        ZVAL_COPY(&resource->object, self);
+    if(ret = uv_idle_start((uv_idle_t *) resource, (uv_idle_cb) idle_handle_callback)){
+        FCI_FREE(resource->callback);
+        RETURN_LONG(ret);
     }
+    
+    resource->start = 1;
+    ZVAL_COPY(&resource->object, self);
     RETURN_LONG(ret);
 }
 
