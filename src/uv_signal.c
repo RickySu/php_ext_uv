@@ -14,19 +14,15 @@ static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
     params[0] = signal_handle->object;
     ZVAL_LONG(&params[1], signo);
     fci_call_function(&signal_handle->callback, &retval, 2, params);
-    zval_dtor(&params[1]);
     zval_dtor(&retval);
 }
 
 static zend_object *createUVSignalResource(zend_class_entry *ce) {
     uv_signal_ext_t *resource;
     resource = ALLOC_RESOURCE(uv_signal_ext_t);
-
     zend_object_std_init(&resource->zo, ce);
     object_properties_init(&resource->zo, ce);
-
     resource->zo.handlers = &OBJECT_HANDLER(UVSignal);
-    ZVAL_NULL(&resource->callback.func);
     return &resource->zo;
 }
 
@@ -35,11 +31,10 @@ void freeUVSignalResource(zend_object *object) {
     resource = FETCH_RESOURCE(object, uv_signal_ext_t);
     if(resource->start){
         uv_signal_stop((uv_signal_t *) resource);
-        freeFunctionCache(&resource->callback);
+        FCI_FREE(resource->callback);
     }
     uv_unref((uv_handle_t *) resource);
     zend_object_std_dtor(&resource->zo);
-    efree(resource);
 }
 
 PHP_METHOD(UVSignal, __construct){
@@ -57,8 +52,7 @@ PHP_METHOD(UVSignal, __construct){
     }
     
     zend_update_property(CLASS_ENTRY(UVSignal), self, ZEND_STRL("loop"), loop);
-    uv_signal_init(FETCH_UV_LOOP(), (uv_signal_t *) resource);
-                                                                                      
+    uv_signal_init(FETCH_UV_LOOP(), (uv_signal_t *) resource);                                                                                  
 }
 
 PHP_METHOD(UVSignal, start){
@@ -67,16 +61,17 @@ PHP_METHOD(UVSignal, start){
     zval *self = getThis();
     uv_signal_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_signal_ext_t);
     
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "zl", &signal_cb, &signo)) {
+    FCI_FREE(resource->callback);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "fl", FCI_PARSE_PARAMETERS_CC(resource->callback), &signo)) {
         return;
     }
-    
-    ret = uv_signal_start((uv_signal_t *) resource, (uv_signal_cb) signal_handle_callback, signo);
-    if(ret == 0){
-        registerFunctionCache(&resource->callback, signal_cb);
-        resource->start = 1;
-        ZVAL_COPY(&resource->object, self);
+    Z_ADDREF(resource->callback.fci.function_name);
+
+    if(ret = uv_signal_start((uv_signal_t *) resource, (uv_signal_cb) signal_handle_callback, signo)){
+        FCI_FREE(resource->callback);
     }
+    resource->start = 1;
+    ZVAL_COPY(&resource->object, self);
     RETURN_LONG(ret);
 }
 
@@ -92,7 +87,7 @@ PHP_METHOD(UVSignal, stop){
     ret = uv_signal_stop((uv_signal_t *) resource);
     if(ret == 0){
         resource->start = 0;
-        freeFunctionCache(&resource->callback);
+        FCI_FREE(resource->callback);
         zval_dtor(&resource->object);
     }
     RETURN_LONG(ret);

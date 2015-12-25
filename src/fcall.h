@@ -26,7 +26,6 @@ static zend_always_inline void freeFunctionCache(fcall_info_t *fcall){
         if(Z_REFCOUNTED(fcall->fci.function_name)){
             zval_dtor(&fcall->fci.function_name);
         }
-        zval_dtor(&fcall->fci.function_name);
         fcall->fci.size = 0;
     }
 }
