@@ -5,6 +5,22 @@
 #define FCI_PARSE_PARAMETERS_CC(x) &x.fci, &x.fcc
 #define FCI_ISNULL(x) (x.fci.size == 0)
 #define FCI_FREE(x) freeFunctionCache(&x)
+#define FCI_GC_TABLE(res, pn) \
+do{ \
+    if(res->pn.fci.size){ \
+        ZVAL_COPY_VALUE(&res->gc_table.pn, &res->pn.fci.function_name); \
+    } \
+} while(0)
+
+#define FCI_GC_TABLE_EX(res, pn, index) \
+do{ \
+    if(res->pn.fci.size){ \
+        ZVAL_COPY_VALUE(&res->gc_table[index], &res->pn.fci.function_name); \
+        index++; \
+    } \
+} while(0)
+
+#define FCI_GC_TABLE_SIZE(x) sizeof(x) / sizeof(zval)
 
 typedef struct fcall_info_s {
     zend_fcall_info fci;
@@ -29,5 +45,4 @@ static zend_always_inline void freeFunctionCache(fcall_info_t *fcall){
         fcall->fci.size = 0;
     }
 }
-
 #endif

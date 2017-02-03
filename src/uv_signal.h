@@ -16,6 +16,9 @@ ZEND_END_ARG_INFO()
 typedef struct uv_signal_ext_s{
     uv_signal_t uv_signal;
     int start;
+    struct {
+        zval callback;
+    } gc_table;
     fcall_info_t callback;
     zval object;
     zend_object zo;
@@ -23,8 +26,8 @@ typedef struct uv_signal_ext_s{
 
 static zend_object *createUVSignalResource(zend_class_entry *class_type);
 static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo);
-
 void freeUVSignalResource(zend_object *object);
+static HashTable *get_gc_UVSignalResource(zval *obj, zval **table, int *n);
 
 PHP_METHOD(UVSignal, __construct);
 PHP_METHOD(UVSignal, start);

@@ -22,7 +22,21 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
     OBJECT_HANDLER(UVTcp).offset = XtOffsetOf(uv_tcp_ext_t, zo);
     OBJECT_HANDLER(UVTcp).clone_obj = NULL;
     OBJECT_HANDLER(UVTcp).free_obj = freeUVTcpResource;
+    OBJECT_HANDLER(UVTcp).get_gc = get_gc_UVTcpResource;
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
+}
+
+static HashTable *get_gc_UVTcpResource(zval *obj, zval **table, int *n) {
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(obj, uv_tcp_ext_t);
+    *table = &resource->gc_table;
+    int index = 0;
+    FCI_GC_TABLE_EX(resource, readCallback, index);
+    FCI_GC_TABLE_EX(resource, writeCallback, index);
+    FCI_GC_TABLE_EX(resource, errorCallback, index);
+    FCI_GC_TABLE_EX(resource, connectCallback, index);
+    FCI_GC_TABLE_EX(resource, shutdownCallback, index);
+    *n = index;
+    return zend_std_get_properties(obj);
 }
 
 void releaseResource(uv_tcp_ext_t *resource){
@@ -258,7 +272,11 @@ PHP_METHOD(UVTcp, listen){
     char cstr_host[30];
     struct sockaddr_in addr;
     
-    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);
+    uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_tcp_ext_t);    
+
+    if(((uv_tcp_ext_t *) &resource->uv_tcp)->flag & UV_TCP_HANDLE_START){
+        RETURN_LONG(-1);
+    }
     
     FCI_FREE(resource->connectCallback);
     
@@ -266,29 +284,25 @@ PHP_METHOD(UVTcp, listen){
         return;
     }
     
-    FCI_ADDREF(resource->connectCallback);
-    
     if(host_len == 0 || host_len >= 30){
-        FCI_FREE(resource->connectCallback);
         RETURN_LONG(-1);
     }
     
     memcpy(cstr_host, host, host_len);
     cstr_host[host_len] = '\0';
     if((ret = uv_ip4_addr(cstr_host, port&0xffff, &addr)) != 0){
-        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
     
     if((ret = uv_tcp_bind(&resource->uv_tcp, (const struct sockaddr*) &addr, 0)) != 0){
-        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
     
     if((ret = uv_listen((uv_stream_t *) &resource->uv_tcp, SOMAXCONN, (uv_connection_cb) connection_cb)) != 0){
-        FCI_FREE(resource->connectCallback);
         RETURN_LONG(ret);
     }
+
+    FCI_ADDREF(resource->connectCallback);
     setSelfReference(resource);
     resource->flag |= UV_TCP_HANDLE_START;    
     RETURN_LONG(ret);

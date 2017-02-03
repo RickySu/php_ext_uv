@@ -5,7 +5,17 @@ CLASS_ENTRY_FUNCTION_D(UVSignal){
     OBJECT_HANDLER(UVSignal).offset = XtOffsetOf(uv_signal_ext_t, zo);
     OBJECT_HANDLER(UVSignal).clone_obj = NULL;
     OBJECT_HANDLER(UVSignal).free_obj = freeUVSignalResource;
+    OBJECT_HANDLER(UVIdle).get_gc = get_gc_UVSignalResource;
     zend_declare_property_null(CLASS_ENTRY(UVSignal), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
+}
+
+static HashTable *get_gc_UVSignalResource(zval *obj, zval **table, int *n) {
+    uv_signal_ext_t *resource;
+    resource = FETCH_OBJECT_RESOURCE(obj, uv_signal_ext_t);
+    FCI_GC_TABLE(resource, callback);
+    *table = (zval *) &resource->gc_table;
+    *n = FCI_GC_TABLE_SIZE(resource->gc_table);
+    return zend_std_get_properties(obj);
 }
 
 static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
@@ -71,7 +81,7 @@ PHP_METHOD(UVSignal, start){
         FCI_FREE(resource->callback);
     }
     resource->start = 1;
-    ZVAL_COPY(&resource->object, self);
+    ZVAL_COPY_VALUE(&resource->object, self);
     RETURN_LONG(ret);
 }
 

@@ -15,6 +15,9 @@ ZEND_END_ARG_INFO()
 typedef struct uv_idle_ext_s{
     uv_idle_t uv_idle;
     int start;
+    struct {
+        zval callback;
+    } gc_table;
     fcall_info_t callback;
     zval object;
     zend_object zo;    
@@ -22,8 +25,8 @@ typedef struct uv_idle_ext_s{
 
 static zend_object *createUVIdleResource(zend_class_entry *class_type);
 static void idle_handle_callback(uv_idle_ext_t *idle_handle);
-
 void freeUVIdleResource(zend_object *object);
+static HashTable *get_gc_UVIdleResource(zval *obj, zval **table, int *n);
 
 PHP_METHOD(UVIdle, __construct);
 PHP_METHOD(UVIdle, start);

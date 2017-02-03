@@ -5,6 +5,7 @@ CLASS_ENTRY_FUNCTION_D(UVIdle){
     OBJECT_HANDLER(UVIdle).offset = XtOffsetOf(uv_idle_ext_t, zo);
     OBJECT_HANDLER(UVIdle).clone_obj = NULL;
     OBJECT_HANDLER(UVIdle).free_obj = freeUVIdleResource;
+    OBJECT_HANDLER(UVIdle).get_gc = get_gc_UVIdleResource;
     zend_declare_property_null(CLASS_ENTRY(UVIdle), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
 }
 
@@ -21,6 +22,15 @@ static zend_object *createUVIdleResource(zend_class_entry *ce) {
     object_properties_init(&resource->zo, ce);    
     resource->zo.handlers = &OBJECT_HANDLER(UVIdle);
     return &resource->zo;
+}
+
+static HashTable *get_gc_UVIdleResource(zval *obj, zval **table, int *n) {
+    uv_idle_ext_t *resource;
+    resource = FETCH_OBJECT_RESOURCE(obj, uv_idle_ext_t);
+    FCI_GC_TABLE(resource, callback);
+    *table = (zval *) &resource->gc_table;
+    *n = FCI_GC_TABLE_SIZE(resource->gc_table);
+    return zend_std_get_properties(obj);
 }
 
 void freeUVIdleResource(zend_object *object) {
@@ -68,7 +78,7 @@ PHP_METHOD(UVIdle, start){
     }
     
     resource->start = 1;
-    ZVAL_COPY(&resource->object, self);
+    ZVAL_COPY_VALUE(&resource->object, self);
     RETURN_LONG(ret);
 }
 
@@ -76,7 +86,6 @@ PHP_METHOD(UVIdle, stop){
     long ret;
     zval *self = getThis();
     uv_idle_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_idle_ext_t);
-    
     if(!resource->start){
         RETURN_LONG(-1);
     }
