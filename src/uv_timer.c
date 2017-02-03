@@ -21,7 +21,7 @@ static HashTable *get_gc_UVTimerResource(zval *obj, zval **table, int *n) {
 static void timer_handle_callback(uv_timer_ext_t *timer_handle){
     zval retval;
     fci_call_function(&timer_handle->callback, &retval, 1, &timer_handle->object);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&retval);
 }
 
 static zend_object *createUVTimerResource(zend_class_entry *ce) {

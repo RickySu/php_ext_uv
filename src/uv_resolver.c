@@ -18,8 +18,8 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *info, int status, struct 
         uv_freeaddrinfo(res);
     }
     fci_call_function(&info->callback, &retval, 2, params);
-    zval_dtor(&params[1]);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&params[1]);
+    zval_ptr_dtor(&retval);
     RELEASE_INFO(info);
 }
 
@@ -35,9 +35,9 @@ static void on_nameinfo_resolved(uv_getnameinfo_ext_t *info, int status, const c
         ZVAL_STRING(&params[2], service);
     }
     fci_call_function(&info->callback, &retval, 3, params);
-    zval_dtor(&params[1]);
-    zval_dtor(&params[2]);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&params[1]);
+    zval_ptr_dtor(&params[2]);
+    zval_ptr_dtor(&retval);
     RELEASE_INFO(info);
 }
 

@@ -12,7 +12,7 @@ CLASS_ENTRY_FUNCTION_D(UVIdle){
 static void idle_handle_callback(uv_idle_ext_t *idle_handle){
     zval retval;
     fci_call_function(&idle_handle->callback, &retval, 1, &idle_handle->object);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&retval);
 }
 
 static zend_object *createUVIdleResource(zend_class_entry *ce) {

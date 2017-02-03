@@ -40,7 +40,7 @@ static void release(uv_udp_ext_t *resource){
 
     if(resource->flag & UV_UDP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_UDP_HANDLE_INTERNAL_REF;
-        zval_dtor(&resource->object);
+        zval_ptr_dtor(&resource->object);
     }
 }
 
@@ -64,8 +64,8 @@ static void send_cb(uv_udp_send_t* sr, int status) {
 
         fci_call_function(&resource->sendCallback, &retval, 4, params);
 
-        zval_dtor(&params[1]);
-        zval_dtor(&retval);
+        zval_ptr_dtor(&params[1]);
+        zval_ptr_dtor(&retval);
         efree(s_addr);
     }
     efree(req->buf.base);
@@ -92,9 +92,9 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
     
             fci_call_function(&resource->recvCallback, &retval, 5, params);
     
-            zval_dtor(&params[1]);
-            zval_dtor(&params[3]);
-            zval_dtor(&retval);
+            zval_ptr_dtor(&params[1]);
+            zval_ptr_dtor(&params[3]);
+            zval_ptr_dtor(&retval);
             efree(s_addr);
         }    
     }
@@ -105,7 +105,7 @@ static void recv_cb(uv_udp_ext_t* resource, ssize_t nread, const uv_buf_t* buf, 
     
             fci_call_function(&resource->errorCallback, &retval, 3, params);
     
-            zval_dtor(&retval);
+            zval_ptr_dtor(&retval);
         }
     }
     efree(buf->base);

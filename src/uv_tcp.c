@@ -64,7 +64,7 @@ void releaseResource(uv_tcp_ext_t *resource){
 
     if(resource->flag & UV_TCP_HANDLE_INTERNAL_REF){
         resource->flag &= ~UV_TCP_HANDLE_INTERNAL_REF;
-        zval_dtor(&resource->object);
+        zval_ptr_dtor(&resource->object);
     }    
 }
 
@@ -76,7 +76,7 @@ static void shutdown_cb(uv_shutdown_t* req, int status) {
     if(!FCI_ISNULL(resource->shutdownCallback)){
         ZVAL_LONG(&params[1], status);
         fci_call_function(&resource->shutdownCallback, &retval, 2, params);
-        zval_dtor(&retval);
+        zval_ptr_dtor(&retval);
     }
 }
 
@@ -95,7 +95,7 @@ static void write_cb(uv_write_t *wr, int status){
         ZVAL_LONG(&params[1], status);
         ZVAL_LONG(&params[2], req->buf.len);    
         fci_call_function(&resource->writeCallback, &retval, 3, params);
-        zval_dtor(&retval);
+        zval_ptr_dtor(&retval);
     }
     efree(req->buf.base);
     efree(req);
@@ -115,15 +115,15 @@ static void read_cb(uv_tcp_ext_t *resource, ssize_t nread, const uv_buf_t* buf) 
         if(!FCI_ISNULL(resource->readCallback)){
             ZVAL_STRINGL(&params[1], buf->base, nread);
             fci_call_function(&resource->readCallback, &retval, 2, params);
-            zval_dtor(&params[1]);
-            zval_dtor(&retval);
+            zval_ptr_dtor(&params[1]);
+            zval_ptr_dtor(&retval);
         }
     }
     else{    
         if(!FCI_ISNULL(resource->errorCallback)){
             ZVAL_LONG(&params[1], nread);        
             fci_call_function(&resource->errorCallback, &retval, 2, params);
-            zval_dtor(&retval);
+            zval_ptr_dtor(&retval);
         }
         tcp_close_socket((uv_tcp_ext_t *) &resource->uv_tcp);
     }
@@ -144,7 +144,7 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
     
     fci_call_function(&resource->connectCallback, &retval, 2, params);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&retval);
 }
 
 static void connection_cb(uv_tcp_ext_t *resource, int status) {
@@ -154,7 +154,7 @@ static void connection_cb(uv_tcp_ext_t *resource, int status) {
     ZVAL_NULL(&retval);
     ZVAL_LONG(&params[1], status);
     fci_call_function(&resource->connectCallback, &retval, 2, params);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&retval);
 }
 
 
@@ -446,7 +446,7 @@ zend_bool make_accepted_uv_tcp_object(uv_tcp_ext_t *server_resource, zval *clien
     uv_tcp_init(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_tcp_t *) client_resource);
     
     if(uv_accept((uv_stream_t *) &server_resource->uv_tcp, (uv_stream_t *) &client_resource->uv_tcp)) {
-        zval_dtor(client);
+        zval_ptr_dtor(client);
         return 0;
     }
     

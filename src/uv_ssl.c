@@ -43,7 +43,7 @@ zend_always_inline int handleHandshakeCallback(uv_ssl_ext_t *resource, int err) 
     }
     
     retval = zend_is_true(&z_retval);
-    zval_dtor(&z_retval);
+    zval_ptr_dtor(&z_retval);
 
     if(retval == 0){
         tcp_close_socket(&resource->uv_tcp_ext);
@@ -129,7 +129,7 @@ static void read_cb(uv_tcp_ext_t *tcp_resource, ssize_t nread, const uv_buf_t* b
         if(!FCI_ISNULL(tcp_resource->errorCallback)){
             ZVAL_LONG(&params[1], nread);
             fci_call_function(&tcp_resource->errorCallback, &retval, 2, params);
-            zval_dtor(&retval);
+            zval_ptr_dtor(&retval);
         }
         tcp_close_socket(&resource->uv_tcp_ext);
         efree(buf->base);
@@ -152,8 +152,8 @@ static void read_cb(uv_tcp_ext_t *tcp_resource, ssize_t nread, const uv_buf_t* b
             if(!FCI_ISNULL(tcp_resource->readCallback)){
                 ZVAL_STRINGL(&params[1], read_buf, read_buf_index);
                 fci_call_function(&tcp_resource->readCallback, &retval, 2, params);
-                zval_dtor(&params[1]);
-                zval_dtor(&retval);
+                zval_ptr_dtor(&params[1]);
+                zval_ptr_dtor(&retval);
             }
             read_buf_index = 0;
         }
@@ -180,8 +180,8 @@ static int sni_cb(SSL *s, int *ad, void *arg) {
                 SSL_set_SSL_CTX(s, resource->ctx[n]);
             }
         }
-        zval_dtor(&param);
-        zval_dtor(&retval);
+        zval_ptr_dtor(&param);
+        zval_ptr_dtor(&retval);
     }
     return SSL_TLSEXT_ERR_OK;
 }
@@ -218,7 +218,7 @@ static void client_connection_cb(uv_connect_t* req, int status) {
     write_bio_to_socket(resource);    
     tcp_resource->flag |= (UV_TCP_HANDLE_START|UV_TCP_READ_START);
     fci_call_function(&tcp_resource->connectCallback, &retval, 2, params);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&retval);
 }
 
 static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *addrinfo, int status, struct addrinfo *res) {
@@ -237,7 +237,7 @@ static void on_addrinfo_resolved(uv_getaddrinfo_ext_t *addrinfo, int status, str
 
         ZVAL_LONG(&params[1], ret);
         fci_call_function(&tcp_resource->connectCallback, &retval, 2, params);
-        zval_dtor(&retval);
+        zval_ptr_dtor(&retval);
         releaseResource(tcp_resource);
     }
 

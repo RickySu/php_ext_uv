@@ -24,7 +24,7 @@ static void signal_handle_callback(uv_signal_ext_t *signal_handle, int signo){
     params[0] = signal_handle->object;
     ZVAL_LONG(&params[1], signo);
     fci_call_function(&signal_handle->callback, &retval, 2, params);
-    zval_dtor(&retval);
+    zval_ptr_dtor(&retval);
 }
 
 static zend_object *createUVSignalResource(zend_class_entry *ce) {
