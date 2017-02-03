@@ -33,7 +33,8 @@ typedef struct uv_udp_ext_s{
     uv_udp_t uv_udp;
     uint flag;
     char *sockAddr;
-    int sockPort;    
+    int sockPort;
+    zval gc_table[3];
     fcall_info_t recvCallback;
     fcall_info_t sendCallback;
     fcall_info_t errorCallback;
@@ -48,7 +49,7 @@ typedef struct send_req_s{
 } send_req_t;
 
 static zend_object *createUVUdpResource(zend_class_entry *class_type);
-
+static HashTable *get_gc_UVUdpResource(zval *obj, zval **table, int *n);
 void freeUVUdpResource(zend_object *object);
 
 PHP_METHOD(UVUdp, __construct);

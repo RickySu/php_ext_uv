@@ -12,10 +12,12 @@ do{ \
     } \
 } while(0)
 
-#define FCI_GC_TABLE_EX(res, pn, index) \
+#define FCI_GC_TABLE_EX(res, pn, index) FCI_GC_TABLE_EX_FROM_EXTEND(res, res, pn, index)
+
+#define FCI_GC_TABLE_EX_FROM_EXTEND(res, extres, pn, index) \
 do{ \
-    if(res->pn.fci.size){ \
-        ZVAL_COPY_VALUE(&res->gc_table[index], &res->pn.fci.function_name); \
+    if(extres->pn.fci.size){ \
+        ZVAL_COPY_VALUE(&res->gc_table[index], &extres->pn.fci.function_name); \
         index++; \
     } \
 } while(0)

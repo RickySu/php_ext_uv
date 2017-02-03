@@ -5,7 +5,19 @@ CLASS_ENTRY_FUNCTION_D(UVUdp){
     OBJECT_HANDLER(UVUdp).offset = XtOffsetOf(uv_udp_ext_t, zo);;
     OBJECT_HANDLER(UVUdp).clone_obj = NULL;
     OBJECT_HANDLER(UVUdp).free_obj = freeUVUdpResource;
+    OBJECT_HANDLER(UVUdp).get_gc = get_gc_UVUdpResource;
     zend_declare_property_null(CLASS_ENTRY(UVUdp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
+}
+
+static HashTable *get_gc_UVUdpResource(zval *obj, zval **table, int *n) {
+    uv_udp_ext_t *resource = FETCH_OBJECT_RESOURCE(obj, uv_udp_ext_t);   
+    *table = &resource->gc_table;
+    int index = 0;
+    FCI_GC_TABLE_EX(resource, recvCallback, index);
+    FCI_GC_TABLE_EX(resource, sendCallback, index);
+    FCI_GC_TABLE_EX(resource, errorCallback, index);
+    *n = index;
+    return zend_std_get_properties(obj);
 }
 
 static void release(uv_udp_ext_t *resource){
@@ -206,23 +218,25 @@ PHP_METHOD(UVUdp, setCallback){
     zval *self = getThis();
     uv_udp_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_udp_ext_t);
 
+    if(resource->flag & UV_UDP_READ_START){
+      RETURN_LONG(-1);
+    }
+    
     FCI_FREE(resource->recvCallback);
     FCI_FREE(resource->sendCallback);
     FCI_FREE(resource->errorCallback);
+    
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "fff", FCI_PARSE_PARAMETERS_CC(resource->recvCallback), FCI_PARSE_PARAMETERS_CC(resource->sendCallback), FCI_PARSE_PARAMETERS_CC(resource->errorCallback))) {
         return;
     }
+
+    if(ret = uv_udp_recv_start(&resource->uv_udp, alloc_cb, (uv_udp_recv_cb) recv_cb)){
+        RETURN_LONG(ret);
+    }
+
     FCI_ADDREF(resource->recvCallback);
     FCI_ADDREF(resource->sendCallback);
     FCI_ADDREF(resource->errorCallback);
-
-    if(ret = uv_udp_recv_start(&resource->uv_udp, alloc_cb, (uv_udp_recv_cb) recv_cb)){
-        FCI_FREE(resource->recvCallback);
-        FCI_FREE(resource->sendCallback);
-        FCI_FREE(resource->errorCallback);
-        RETURN_LONG(ret);
-    }
-    
     resource->flag |= (UV_UDP_HANDLE_INTERNAL_REF|UV_UDP_HANDLE_START|UV_UDP_READ_START);
     ZVAL_COPY(&resource->object, self);
     RETURN_LONG(ret);

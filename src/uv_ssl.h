@@ -72,6 +72,7 @@ static zend_always_inline void releaseUVSSLFunctionCache(uv_ssl_ext_t *resource)
 }
 static zend_object *createUVSSLResource(zend_class_entry *class_type);
 void freeUVSSLResource(zend_object *object);
+static HashTable *get_gc_UVSSLResource(zval *obj, zval **table, int *n);
 static int write_bio_to_socket(uv_ssl_ext_t *resource);
 
 PHP_METHOD(UVSSL, __construct);

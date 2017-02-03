@@ -5,7 +5,17 @@ CLASS_ENTRY_FUNCTION_D(UVTimer){
     OBJECT_HANDLER(UVTimer).offset = XtOffsetOf(uv_timer_ext_t, zo);
     OBJECT_HANDLER(UVTimer).clone_obj = NULL;
     OBJECT_HANDLER(UVTimer).free_obj = freeUVTimerResource;
+    OBJECT_HANDLER(UVTimer).get_gc = get_gc_UVTimerResource;
     zend_declare_property_null(CLASS_ENTRY(UVTimer), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
+}
+
+static HashTable *get_gc_UVTimerResource(zval *obj, zval **table, int *n) {
+    uv_timer_ext_t *resource;
+    resource = FETCH_OBJECT_RESOURCE(obj, uv_timer_ext_t);
+    FCI_GC_TABLE(resource, callback);
+    *table = (zval *) &resource->gc_table;
+    *n = FCI_GC_TABLE_SIZE(resource->gc_table);
+    return zend_std_get_properties(obj);
 }
 
 static void timer_handle_callback(uv_timer_ext_t *timer_handle){

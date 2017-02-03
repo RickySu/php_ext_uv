@@ -5,6 +5,7 @@ CLASS_ENTRY_FUNCTION_D(UVSSL){
     OBJECT_HANDLER(UVSSL).offset = XtOffsetOf(uv_tcp_ext_t, zo) + XtOffsetOf(uv_ssl_ext_t, uv_tcp_ext);
     OBJECT_HANDLER(UVSSL).clone_obj = NULL;
     OBJECT_HANDLER(UVSSL).free_obj = freeUVSSLResource;
+    OBJECT_HANDLER(UVSSL).get_gc = get_gc_UVSSLResource;
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV2);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV3);
     REGISTER_CLASS_CONSTANT_LONG(UVSSL, SSL_METHOD_SSLV23);
@@ -15,6 +16,18 @@ CLASS_ENTRY_FUNCTION_D(UVSSL){
     REGISTER_UV_SSL_X509_CONSTANT();
 
     SSL_library_init();
+}
+
+static HashTable *get_gc_UVSSLResource(zval *obj, zval **table, int *n){
+    int index;
+    uv_tcp_ext_t *tcp_resource = FETCH_OBJECT_RESOURCE(obj, uv_tcp_ext_t);
+    uv_ssl_ext_t *resource = FETCH_RESOURCE_FROM_EXTEND(tcp_resource, uv_tcp_ext, uv_ssl_ext_t);
+    HashTable *result = get_gc_UVTcpResource(obj, table, n);
+    index = *n;
+    FCI_GC_TABLE_EX_FROM_EXTEND(tcp_resource, resource, sslServerNameCallback, index);
+    FCI_GC_TABLE_EX_FROM_EXTEND(tcp_resource, resource, sslHandshakeCallback, index);
+    *n = index;
+    return result;
 }
 
 zend_always_inline int handleHandshakeCallback(uv_ssl_ext_t *resource, int err) {

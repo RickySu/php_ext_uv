@@ -26,7 +26,7 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
     zend_declare_property_null(CLASS_ENTRY(UVTcp), ZEND_STRL("loop"), ZEND_ACC_PRIVATE);
 }
 
-static HashTable *get_gc_UVTcpResource(zval *obj, zval **table, int *n) {
+HashTable *get_gc_UVTcpResource(zval *obj, zval **table, int *n) {
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(obj, uv_tcp_ext_t);
     *table = &resource->gc_table;
     int index = 0;
