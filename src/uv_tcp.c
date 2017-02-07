@@ -28,7 +28,7 @@ CLASS_ENTRY_FUNCTION_D(UVTcp){
 
 HashTable *get_gc_UVTcpResource(zval *obj, zval **table, int *n) {
     uv_tcp_ext_t *resource = FETCH_OBJECT_RESOURCE(obj, uv_tcp_ext_t);
-    *table = &resource->gc_table;
+    *table = &resource->gc_table[0];
     int index = 0;
     FCI_GC_TABLE_EX(resource, readCallback, index);
     FCI_GC_TABLE_EX(resource, writeCallback, index);

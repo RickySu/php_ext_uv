@@ -24,6 +24,7 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
       src/uv_resolver.c
       src/uv_idle.c
       src/uv_util.c
+      src/uv_pipe.c
       src/ssl_verify.c
   "
 
