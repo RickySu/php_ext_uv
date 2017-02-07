@@ -3,7 +3,7 @@ Check for UVTcp
 --FILE--
 <?php
 $loop = UVLoop::defaultLoop();
-$tcp = new UVTcp($loop);
+$tcp = new UVTcp(null);
 $tcp->listen('127.0.0.1', 54321, function($tcp2, $status) use($tcp){
     echo "on connect $status\n";
     var_dump($tcp === $tcp2);
