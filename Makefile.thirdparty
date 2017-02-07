@@ -4,7 +4,7 @@ thirdparty/build/lib/libuv.a:
 	mv ar-lib compile config.guess config.h.in config.sub configure.in depcomp install-sh ltmain.sh .tmp/; \
 	cd thirdparty/libuv && \
 	./autogen.sh && \
-	CFLAGS="$(CFLAGS) -fPIC"  ./configure --prefix="$(srcdir)/thirdparty/build" && \
+	CFLAGS="$(CFLAGS) -fPIC -g -O2"  ./configure --prefix="$(srcdir)/thirdparty/build" && \
 	make install; \
 	mv $(srcdir)/.tmp/* $(srcdir); \
 	rmdir $(srcdir)/.tmp
