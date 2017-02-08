@@ -13,7 +13,6 @@
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVPipe, __construct), 0)
     ZEND_ARG_OBJ_INFO(0, loop, UVLoop, 1)
-    ZEND_ARG_INFO(0, ipc)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVPipe, setCallback), 0)
@@ -43,7 +42,6 @@ ZEND_END_ARG_INFO()
 typedef struct uv_pipe_ext_s{
     uv_pipe_t uv_pipe;
     uint flag;
-    int ipc;
     uv_connect_t connect_req;
     uv_shutdown_t shutdown_req;
     char *sockAddr;

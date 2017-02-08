@@ -306,23 +306,21 @@ PHP_METHOD(UVPipe, close){
 PHP_METHOD(UVPipe, __construct){
     zval *loop = NULL;
     zval *self = getThis();
-    int ipc = 0;
     uv_pipe_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_pipe_ext_t);
    
-    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|zb", &loop, &ipc)) {
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &loop)) {
         return;
     }
     
     ZVAL_COPY_VALUE(&resource->object, self);
         
     if(NULL == loop || ZVAL_IS_NULL(loop)){
-        uv_pipe_init(uv_default_loop(), (uv_pipe_t *) resource, ipc);
+        uv_pipe_init(uv_default_loop(), (uv_pipe_t *) resource, 0);
         return;
     }
     
     zend_update_property(CLASS_ENTRY(UVPipe), self, ZEND_STRL("loop"), loop);
-    uv_pipe_init(FETCH_UV_LOOP(), (uv_pipe_t *) resource, ipc);
-    resource->ipc = ipc;
+    uv_pipe_init(FETCH_UV_LOOP(), (uv_pipe_t *) resource, 0);
 }
 
 PHP_METHOD(UVPipe, write){
@@ -402,7 +400,7 @@ zend_bool make_accepted_uv_pipe_object(uv_pipe_ext_t *server_resource, zval *cli
     client_resource = FETCH_OBJECT_RESOURCE(client, uv_pipe_ext_t);
     zval *loop = zend_read_property(CLASS_ENTRY(UVPipe), &server_resource->object, ZEND_STRL("loop"), 1, &rv);
     zend_update_property(CLASS_ENTRY(UVPipe), client, ZEND_STRL("loop"), loop);
-    uv_pipe_init(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_pipe_t *) client_resource, server_resource->ipc);
+    uv_pipe_init(ZVAL_IS_NULL(loop)?uv_default_loop():FETCH_UV_LOOP(), (uv_pipe_t *) client_resource, 0);
     
     if(uv_accept((uv_stream_t *) &server_resource->uv_pipe, (uv_stream_t *) &client_resource->uv_pipe)) {
         zval_ptr_dtor(client);
