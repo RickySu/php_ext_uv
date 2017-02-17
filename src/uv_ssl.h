@@ -47,6 +47,7 @@ ZEND_BEGIN_ARG_INFO(ARGINFO(UVSSL, connect), 0)
 ZEND_END_ARG_INFO()
 
 typedef struct uv_ssl_ext_s{
+    uv_tcp_ext_t uv_tcp_ext;
     const SSL_METHOD *ssl_method;
     SSL_CTX** ctx;
     int nctx;
@@ -57,7 +58,6 @@ typedef struct uv_ssl_ext_s{
     int clientMode;
     fcall_info_t sslServerNameCallback;
     fcall_info_t sslHandshakeCallback;
-    uv_tcp_ext_t uv_tcp_ext;
 } uv_ssl_ext_t;
 
 typedef struct uv_getaddrinfo_ext_s{   

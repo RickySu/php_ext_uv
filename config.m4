@@ -25,7 +25,8 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
       src/uv_idle.c
       src/uv_util.c
       src/uv_pipe.c
-      src/ssl_verify.c
+      src/uv_process.c
+      src/uv_worker.c
   "
 
   dnl {{{ --with-event-openssl
@@ -44,7 +45,7 @@ if test "$PHP_PHP_EXT_UV" != "no"; then
                            Check the path given to --with-openssl-dir and output in config.log)
               ])
       ])                          
-      MODULES="$MODULES src/uv_ssl.c"      
+      MODULES="$MODULES src/uv_ssl.c src/ssl_verify.c"
       PHP_ADD_LIBRARY(ssl, PHP_EXT_UV_SHARED_LIBADD)
   fi
   dnl }}}

@@ -43,7 +43,6 @@ ZEND_END_ARG_INFO()
 typedef struct uv_pipe_ext_s{
     uv_pipe_t uv_pipe;
     uint flag;
-    int ipc;
     uv_connect_t connect_req;
     uv_shutdown_t shutdown_req;
     char *sockAddr;
