@@ -32,6 +32,10 @@ ZEND_BEGIN_ARG_INFO(ARGINFO(UVPipe, connect), 0)
     ZEND_ARG_INFO(0, onConnectCallback)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(ARGINFO(UVPipe, attachIPC), 0)
+    ZEND_ARG_INFO(0, onConnectCallback)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO(ARGINFO(UVPipe, shutdown), 0)
     ZEND_ARG_INFO(0, onShutdownCallback)
 ZEND_END_ARG_INFO()
@@ -79,6 +83,8 @@ zend_bool make_accepted_uv_pipe_object(uv_pipe_ext_t *server_resource, zval *cli
 static void pipe_close_cb(uv_handle_t* handle);
 void pipe_close_socket(uv_pipe_ext_t *handle);
 static void setSelfReference(uv_pipe_ext_t *resource);
+static void client_connection_cb(uv_connect_t* req, int status);
+static void connection_cb(uv_pipe_ext_t *resource, int status);
 
 PHP_METHOD(UVPipe, getSockname);
 PHP_METHOD(UVPipe, getPeername);
@@ -90,6 +96,8 @@ PHP_METHOD(UVPipe, close);
 PHP_METHOD(UVPipe, shutdown);
 PHP_METHOD(UVPipe, __construct);
 PHP_METHOD(UVPipe, connect);
+PHP_METHOD(UVPipe, open);
+PHP_METHOD(UVPipe, attachIPC);
 
 DECLARE_FUNCTION_ENTRY(UVPipe) = {
     PHP_ME(UVPipe, __construct, ARGINFO(UVPipe, __construct), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -101,7 +109,8 @@ DECLARE_FUNCTION_ENTRY(UVPipe) = {
     PHP_ME(UVPipe, write, ARGINFO(UVPipe, write), ZEND_ACC_PUBLIC)
     PHP_ME(UVPipe, close, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(UVPipe, shutdown, ARGINFO(UVPipe, shutdown), ZEND_ACC_PUBLIC)
-    PHP_ME(UVPipe, connect, ARGINFO(UVPipe, connect), ZEND_ACC_PUBLIC)    
+    PHP_ME(UVPipe, connect, ARGINFO(UVPipe, connect), ZEND_ACC_PUBLIC)
+    PHP_ME(UVPipe, attachIPC, ARGINFO(UVPipe, attachIPC), ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 #endif

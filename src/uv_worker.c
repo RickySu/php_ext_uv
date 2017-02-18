@@ -99,9 +99,25 @@ PHP_METHOD(UVWorker, setCloseCallback){
     long ret;
     zval *self = getThis();
     uv_worker_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_worker_ext_t);
+    
     FCI_FREE(resource->closeCallback);
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "f", FCI_PARSE_PARAMETERS_CC(resource->closeCallback))) {
         return;
     }
     FCI_ADDREF(resource->closeCallback);
+}
+
+PHP_METHOD(UVWorker, attach){
+    zval *self = getThis();
+    zval *stream = NULL;
+    uv_worker_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_worker_ext_t);
+    uv_tcp_ext_t *stream_resource;    
+    uv_write_t *write_req;
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &stream)) {
+        return;
+    }
+    stream_resource = FETCH_OBJECT_RESOURCE(stream, uv_tcp_ext_t);
+    resource->dummy_buf = uv_buf_init("a", 1);
+    write_req = (uv_write_t*) emalloc(sizeof(uv_write_t));
+    uv_write2(write_req, (uv_stream_t*) &resource->pipe, &resource->dummy_buf, 1, (uv_stream_t*) &stream_resource->uv_tcp, NULL);
 }

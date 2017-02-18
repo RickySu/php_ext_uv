@@ -128,6 +128,18 @@ static void read_cb(uv_pipe_ext_t *resource, ssize_t nread, const uv_buf_t* buf)
     efree(buf->base);
 }
 
+static void ipc_read_cb(uv_pipe_ext_t *resource, ssize_t nread, const uv_buf_t* buf) {
+    if(nread > 0){
+        while (uv_pipe_pending_count((uv_pipe_t*) resource) != 0) {
+            if(uv_pipe_pending_type((uv_pipe_t*) resource) == UV_TCP){
+                connection_cb(resource, 0);
+            }
+        }
+    }
+    efree(buf->base);
+}
+
+
 static void client_connection_cb(uv_connect_t* req, int status) {
     zval retval;
     uv_pipe_ext_t *resource = (uv_pipe_ext_t *) req->handle;
@@ -154,7 +166,6 @@ static void connection_cb(uv_pipe_ext_t *resource, int status) {
     fci_call_function(&resource->connectCallback, &retval, 2, params);
     zval_ptr_dtor(&retval);
 }
-
 
 static zend_object *createUVPipeResource(zend_class_entry *ce) {
     uv_pipe_ext_t *resource;
@@ -319,7 +330,6 @@ PHP_METHOD(UVPipe, __construct){
         uv_pipe_init(uv_default_loop(), (uv_pipe_t *) resource, ipc);
         return;
     }
-    
     zend_update_property(CLASS_ENTRY(UVPipe), self, ZEND_STRL("loop"), loop);
     uv_pipe_init(FETCH_UV_LOOP(), (uv_pipe_t *) resource, ipc);
 }
@@ -392,6 +402,31 @@ PHP_METHOD(UVPipe, connect){
     
     setSelfReference(resource);
     resource->flag |= UV_PIPE_HANDLE_START;    
+    RETURN_LONG(ret);
+}
+
+PHP_METHOD(UVPipe, attachIPC){
+    long ret;
+    zval *self = getThis();
+    uv_pipe_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_pipe_ext_t);
+
+    if(ret = uv_pipe_open(&resource->uv_pipe, 0)){
+        RETURN_LONG(ret);
+    }
+
+    FCI_FREE(resource->connectCallback);
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "f",  FCI_PARSE_PARAMETERS_CC(resource->connectCallback))) {
+        RETURN_LONG(-1);
+    }
+    
+    FCI_ADDREF(resource->connectCallback);
+
+    if(ret = uv_read_start((uv_stream_t *) &resource->uv_pipe, alloc_cb, (uv_read_cb) ipc_read_cb)){
+        RETURN_LONG(ret);
+    }
+
+    setSelfReference(resource);
+    resource->flag |= (UV_PIPE_HANDLE_START|UV_PIPE_READ_START);
     RETURN_LONG(ret);
 }
 
