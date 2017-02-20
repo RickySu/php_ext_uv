@@ -71,17 +71,16 @@ int make_worker(uv_loop_t *loop, char *args[], zval *worker) {
     
     resource->options.exit_cb = close_process_handle;
     resource->options.file = args[0];
-    resource->options.args = args;
-    
+    resource->options.args = args;        
     if((retval = uv_spawn(loop, &resource->process, &resource->options))==0){
         Z_ADDREF(resource->object);
     }
+    resource->loop = loop;
     return retval;
 }
 
 static void close_process_handle(uv_process_t *process, int64_t exit_status, int term_signal) {
     uv_worker_ext_t *resource = (uv_worker_ext_t *) process;    
-    printf("process end %d\n", resource->process.pid);
     zval retval;
     zval params[3];
     params[0] = resource->object;
@@ -107,17 +106,37 @@ PHP_METHOD(UVWorker, setCloseCallback){
     FCI_ADDREF(resource->closeCallback);
 }
 
+static void tcp_close_cb(uv_handle_t* handle) {
+    efree(handle);
+}
+
+static void write2_cb(write2_req_t* req, int status) {
+    uv_close(req->client, tcp_close_cb);
+    efree(req);
+}
+
 PHP_METHOD(UVWorker, attach){
     zval *self = getThis();
     zval *stream = NULL;
     uv_worker_ext_t *resource = FETCH_OBJECT_RESOURCE(self, uv_worker_ext_t);
     uv_tcp_ext_t *stream_resource;    
-    uv_write_t *write_req;
+    write2_req_t *write2_req;
+    int r;
+    
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &stream)) {
         return;
     }
+    
     stream_resource = FETCH_OBJECT_RESOURCE(stream, uv_tcp_ext_t);
-    resource->dummy_buf = uv_buf_init("a", 1);
-    write_req = (uv_write_t*) emalloc(sizeof(uv_write_t));
-    uv_write2(write_req, (uv_stream_t*) &resource->pipe, &resource->dummy_buf, 1, (uv_stream_t*) &stream_resource->uv_tcp, NULL);
+    write2_req = (write2_req_t*) emalloc(sizeof(write2_req_t));
+    write2_req->client = (uv_tcp_t*) emalloc(sizeof(uv_tcp_t));
+    uv_tcp_init(resource->loop, write2_req->client);
+    
+    if(uv_accept(&stream_resource->uv_tcp, write2_req->client) == 0){
+        resource->dummy_buf = uv_buf_init("a", 1);
+        uv_write2(&write2_req->req, (uv_stream_t*) &resource->pipe, &resource->dummy_buf, 1, (uv_stream_t*) write2_req->client, write2_cb);
+        return;
+    }
+    efree(write2_req->client);
+    efree(write2_req);
 }

@@ -17,10 +17,16 @@ ZEND_BEGIN_ARG_INFO(ARGINFO(UVWorker, attach), 0)
     ZEND_ARG_OBJ_INFO(0, stream, UVTcp, 1)
 ZEND_END_ARG_INFO()
 
+typedef struct {
+    uv_write_t req;
+    uv_tcp_t *client;
+} write2_req_t;
+
 typedef struct uv_worker_ext_s{
     uv_process_t process;
     uv_process_options_t options;
     uv_pipe_t pipe;
+    uv_loop_t *loop;
     uv_buf_t dummy_buf;
     struct {
         zval closeCallback;
